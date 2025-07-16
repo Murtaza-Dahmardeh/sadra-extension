@@ -1,5 +1,5 @@
 import { ExtVersion } from "@App/app/const";
-import { Alert, Badge, Button, Card, Collapse, Dropdown, Menu, Switch } from "@arco-design/web-react";
+import { Alert, Badge, Button, Card, Collapse, Dropdown, Menu, Switch, Input, Message, Spin } from "@arco-design/web-react";
 import {
   IconBook,
   IconBug,
@@ -44,6 +44,64 @@ function App() {
   const [isEnableScript, setIsEnableScript] = useState(true);
   const [isBlacklist, setIsBlacklist] = useState(false);
   const { t } = useTranslation();
+
+  // User key state and loading
+  const [userKey, setUserKey] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
+
+  // Download and store script logic
+  const handleUserKeySubmit = async () => {
+    if (!userKey) {
+      Message.error("Please enter a user key.");
+      return;
+    }
+    setLoading(true);
+    setDownloadStatus(null);
+    try {
+      // 1. POST user_key to server
+      const resp = await fetch("http://localhost:3007/get-download-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_key: userKey }),
+      });
+      if (!resp.ok) throw new Error("Failed to get download URL");
+      const data = await resp.json();
+      if (!data.download_url) throw new Error("No download_url in response");
+      // 2. Download script
+      const scriptResp = await fetch(data.download_url);
+      if (!scriptResp.ok) throw new Error("Failed to download script");
+      const scriptText = await scriptResp.text();
+      // 3. Store script (use background logic via message passing)
+      await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          {
+            action: "serviceWorker/install_script_by_code",
+            data: {
+              code: scriptText,
+              source: "user",
+            },
+          },
+          (result) => {
+            // Debug: log the full result for troubleshooting
+            console.log("install_script_by_code result", result, chrome.runtime.lastError);
+            if (result.data.success) {
+              resolve(result);
+            } else {
+              reject(result.data.error);
+            }
+          }
+        );
+      });
+      setDownloadStatus("success");
+      Message.success("Script installed successfully!");
+    } catch (e: any) {
+      setDownloadStatus("error");
+      Message.error(e.message || "Failed to install script");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   let url: URL | undefined;
   try {
@@ -231,6 +289,29 @@ function App() {
 
   return (
     <>
+      {/* User Key Input Section */}
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Input
+            placeholder="Enter user key"
+            value={userKey}
+            onChange={setUserKey}
+            style={{ flex: 1 }}
+            disabled={loading}
+          />
+          <Button
+            type="primary"
+            loading={loading}
+            onClick={handleUserKeySubmit}
+            disabled={!userKey || loading}
+          >
+            Submit
+          </Button>
+        </div>
+        {loading && <Spin style={{ marginLeft: 8 }} />}
+        {downloadStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Success!</span>}
+        {downloadStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Failed!</span>}
+      </Card>
       {warningMessageHTML && (
         <Alert
           type="warning"

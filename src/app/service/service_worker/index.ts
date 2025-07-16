@@ -80,6 +80,20 @@ export default class ServiceWorkerManager {
     const system = new SystemService(systemConfig, this.api.group("system"), this.sender);
     system.init();
 
+    // Add handler for installing script by code from popup
+    this.api.on("install_script_by_code", async (params, _sender) => {
+      console.log("install_script_by_code handler called", params);
+      try {
+        if (!params.code) throw new Error("No script code provided");
+        // Use a random uuid for the script install
+        const uuid = (crypto.randomUUID && crypto.randomUUID()) || (await import("uuid")).v4();
+        await script.installByCode({ uuid, code: params.code, upsertBy: params.source || "user" });
+        return { success: true };
+      } catch (e: any) {
+        return { success: false, error: e.message || e.toString() };
+      }
+    });
+
     // 定时器处理
     chrome.alarms.onAlarm.addListener((alarm) => {
       const lastError = chrome.runtime.lastError;
