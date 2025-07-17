@@ -16,6 +16,7 @@ import { SystemService } from "./system";
 import { type Logger, LoggerDAO } from "@App/app/repo/logger";
 import { localePath, t } from "@App/locales/locales";
 import { InfoNotification } from "@App/pkg/utils/utils";
+import { handleDbCrud } from '../../../service_worker'; // Adjust path if needed
 
 // service worker的管理器
 export default class ServiceWorkerManager {
@@ -92,6 +93,11 @@ export default class ServiceWorkerManager {
       } catch (e: any) {
         return { success: false, error: e.message || e.toString() };
       }
+    });
+
+    // Register EXT_DB_CRUD handler
+    this.api.on("EXT_DB_CRUD", async (msg, _sender) => {
+      return handleDbCrud(msg);
     });
 
     // 定时器处理

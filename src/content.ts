@@ -28,3 +28,22 @@ client.pageLoad().then((data) => {
   const runtime = new ContentRuntime(extServer, server, send, msg);
   runtime.start(data.scripts, data.envInfo);
 });
+
+// --- IndexedDB CRUD DOM Event Bridge ---
+window.addEventListener('extension-db-request', async (event: Event) => {
+  const customEvent = event as CustomEvent;
+  const detail = customEvent.detail;
+  // Map op to action for the service worker
+  const response = await chrome.runtime.sendMessage({
+    action: 'serviceWorker/EXT_DB_CRUD',
+    data: {
+      action_op: detail.op, // pass the actual CRUD op
+    key: detail.key,
+    value: detail.value,
+    table: detail.table,
+    }
+  });
+  // Dispatch response event back to the page
+  window.dispatchEvent(new CustomEvent('extension-db-response', { detail: response }));
+});
+// --- End Bridge ---

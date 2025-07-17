@@ -47,6 +47,7 @@ export class Server {
     }
 
     message.onMessage((msg: { action: string; data: any }, sendResponse, sender) => {
+      console.log("Murtaza server onMessage", { msg: msg as any });
       this.logger.trace("server onMessage", { msg: msg as any });
       if (msg.action.startsWith(prefix)) {
         return this.messageHandle(msg.action.slice(prefix.length + 1), msg.data, sendResponse, sender);

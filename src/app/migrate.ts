@@ -209,6 +209,8 @@ function renameField() {
         "++id,&uuid,name,namespace,author,originDomain,subscribeUrl,type,sort,status," +
         "runStatus,createtime,updatetime,checktime",
       logger: "++id,level,createtime",
+      forms: "++id,key,value,createtime,updatetime",
+      captcha: "++id,key,value,createtime,updatetime",
       // export: "++id,&scriptId",
     })
     .upgrade(async (tx) => {
@@ -229,8 +231,9 @@ function renameField() {
         });
     });
   db.version(17).stores({
-    // export是0.10.x时的兼容性处理
     export: "++id,&scriptId",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   // 将脚本数据迁移到chrome.storage
   db.version(18).upgrade(() => {
@@ -243,37 +246,57 @@ export default function migrate() {
   // 数据库索引定义,每一次变动必须更新version
   db.version(1).stores({
     scripts: "++id,&uuid,name,namespace,author,origin_domain,type,status,createtime,updatetime,checktime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(2).stores({
     logger: "++id,level,origin,createtime",
     permission: "++id,[scriptId+permission+permissionValue],createtime,updatetime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(3).stores({
     logger: "++id,level,title,origin,createtime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(4).stores({
     value: "++id,scriptId,namespace,key,createtime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(5).stores({
     logger: "++id,level,origin,createtime,title,[origin+title],[level+origin+title]",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(6).stores({
     scripts: "++id,&uuid,name,namespace,author,origin_domain,type,status,runStatus,createtime,updatetime,checktime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(7).stores({
     resource: "++id,&url,content,type,createtime,updatetime",
     resourceLink: "++id,url,scriptId,createtime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(8).stores({
     logger: "++id,level,origin,createtime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(9).stores({
     logger: "++id,level,scriptId,origin,createtime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(10)
     .stores({
       scripts:
         "++id,&uuid,name,namespace,author,origin_domain,type,sort,status,runStatus,createtime,updatetime,checktime",
+      forms: "++id,key,value,createtime,updatetime",
+      captcha: "++id,key,value,createtime,updatetime",
     })
     .upgrade((tx) => {
       return tx
@@ -285,10 +308,14 @@ export default function migrate() {
     });
   db.version(11).stores({
     export: "++id,&uuid,scriptId",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(12)
     .stores({
       value: "++id,scriptId,storageName,key,createtime",
+      forms: "++id,key,value,createtime,updatetime",
+      captcha: "++id,key,value,createtime,updatetime",
     })
     .upgrade((tx) => {
       return tx
@@ -306,12 +333,18 @@ export default function migrate() {
     scripts:
       "++id,&uuid,name,namespace,author,origin_domain,subscribeUrl,type,sort,status,runStatus,createtime,updatetime,checktime",
     sync: "++id,&key,[user+device+type],createtime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(14).stores({
     value: "++id,[scriptId+key],[storageName+key]",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   db.version(15).stores({
     permission: "++id,scriptId,[scriptId+permission+permissionValue],createtime,updatetime",
+    forms: "++id,key,value,createtime,updatetime",
+    captcha: "++id,key,value,createtime,updatetime",
   });
   // 使用小峰驼统一命名规范
   return renameField();
