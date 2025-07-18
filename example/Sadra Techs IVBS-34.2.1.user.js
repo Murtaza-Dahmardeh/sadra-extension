@@ -679,9 +679,105 @@
         }, state.pre.qwt);
     }
 
-    function storePerson(state) {
+    // === EXT_DB_CRUD Event-based IndexedDB Helper Functions ===
+    function dbRequest(op, { key, value, table = 'forms' } = {}) {
+        return new Promise((resolve) => {
+            function handler(event) {
+                window.removeEventListener('extension-db-response', handler);
+                resolve(event.detail);
+            }
+            window.addEventListener('extension-db-response', handler);
+            window.dispatchEvent(new CustomEvent('extension-db-request', {
+                detail: { op, key, value, table }
+            }));
+        });
+    }
+
+    async function dbList(table = 'forms') {
+        const res = await dbRequest('list', { table });
+        return res.data.success ? res.data.value : [];
+    }
+
+    async function dbRead(key, table = 'forms') {
+        const res = await dbRequest('read', { key, table });
+        return res.data.success ? res.data.value : null;
+    }
+
+    async function dbUpdate(key, value, table = 'forms') {
+        return await dbRequest('update', { key, value, table });
+    }
+
+    async function dbDelete(key, table = 'forms') {
+        return await dbRequest('delete', { key, table });
+    }
+
+    // Helper function to convert file to base64
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result;
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Helper function to convert base64 to blob
+    function base64ToBlob(base64, filename = 'upload.png') {
+        return new Promise((resolve, reject) => {
+            try {
+                // Remove data URL prefix if present
+                const base64Data = base64.replace(/^data:[^;]+;base64,/, '');
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                
+                // Try to detect MIME type from base64 prefix
+                let mimeType = 'image/png'; // default
+                if (base64.startsWith('data:image/jpeg')) mimeType = 'image/jpeg';
+                else if (base64.startsWith('data:image/png')) mimeType = 'image/png';
+                else if (base64.startsWith('data:image/gif')) mimeType = 'image/gif';
+                else if (base64.startsWith('data:image/webp')) mimeType = 'image/webp';
+                
+                const blob = new Blob([byteArray], { type: mimeType });
+                resolve(blob);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    // Function to inject blob as file into file input
+    async function injectBlobAsFile(input, blob, filename = 'upload.png') {
+        if (!input || input.tagName !== 'INPUT' || input.type !== 'file') {
+            console.error('Provided element is not a file input');
+            return;
+        }
+
+console.log(blob)
+        const file = new File([blob], filename, { type: blob.type });
+
+        // Create a DataTransfer to simulate a user selecting a file
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+
+        input.files = dataTransfer.files;
+
+        // Dispatch a change event to notify the page that a file was selected
+        const event = new Event('change', { bubbles: true });
+        input.dispatchEvent(event);
+    }
+
+    // Replace storePerson with async EXT_DB_CRUD version with base64 support
+    async function storePerson(state) {
         const get = id => document.querySelector(id).value || "";
         const person = {
+            key: state.filpid || Date.now().toString(),
             name: get('#id_first_name'),
             lastname: get('#id_last_name'),
             fathername: get('#id_father_name'),
@@ -699,44 +795,68 @@
             entry: get('#id_entry_option'),
             purpose: get('#id_extra_741'),
             arrival: get('#id_extra_751'),
-            departure: get('#id_extra_761')
+            departure: get('#id_extra_761'),
+            createtime: Date.now(),
+            updatetime: Date.now()
         };
+
+        // Convert file inputs to base64
         const photo = document.getElementById("id_picture");
-        if (photo.files.length > 0) {
-            person.photo = state.pre.path + "\\" + photo.files[0].name;
-        }
-        const pass = document.getElementById("id_passport_image");
-        if (pass.files.length > 0) {
-            person.pass = state.pre.path + "\\" + pass.files[0].name;
-        }
-        const tsf = document.getElementById("id_extra_country_2231");
-        if (tsf.files.length > 0) {
-            person.tsf = state.pre.path + "\\" + tsf.files[0].name;
-        }
-        const tsb = document.getElementById("id_extra_1541");
-        if (tsb.files.length > 0) {
-            person.tsb = state.pre.path + "\\" + tsb.files[0].name;
-        }
-        const update = document.getElementById("id_extra_country_2141");
-        if (update.files.length > 0) {
-            person.update = state.pre.path + "\\" + update.files[0].name;
-        }
-        var autofill = localStorage.getItem('autofill');
-        const persons = JSON.parse(autofill);
-        if (state.filpid) {
-            person.id = state.filpid
-            const index = persons.findIndex(p => p.id === state.filpid);
-            if (index !== -1) {
-                persons[index] = person;
+        if (photo && photo.files.length > 0) {
+            try {
+                person.photoBase64 = await fileToBase64(photo.files[0]);
+            } catch (error) {
+                console.error('Error converting photo to base64:', error);
             }
-        } else {
-            person.id = persons.length + 1
-            persons.push(person);
         }
-        localStorage.setItem("autofill", JSON.stringify(persons));
+
+        const pass = document.getElementById("id_passport_image");
+        if (pass && pass.files.length > 0) {
+            try {
+                person.passBase64 = await fileToBase64(pass.files[0]);
+            } catch (error) {
+                console.error('Error converting passport to base64:', error);
+            }
+        }
+
+        const tsf = document.getElementById("id_extra_country_2231");
+        if (tsf && tsf.files.length > 0) {
+            try {
+                person.tsfBase64 = await fileToBase64(tsf.files[0]);
+            } catch (error) {
+                console.error('Error converting tsf to base64:', error);
+            }
+        }
+
+        const tsb = document.getElementById("id_extra_1541");
+        if (tsb && tsb.files.length > 0) {
+            try {
+                person.tsbBase64 = await fileToBase64(tsb.files[0]);
+            } catch (error) {
+                console.error('Error converting tsb to base64:', error);
+            }
+        }
+
+        const update = document.getElementById("id_extra_country_2141");
+        if (update && update.files.length > 0) {
+            try {
+                person.updateBase64 = await fileToBase64(update.files[0]);
+            } catch (error) {
+                console.error('Error converting update to base64:', error);
+            }
+        }
+
+        // Store the person data
+        await dbUpdate(person.key, person);
+        state.filpid = person.key;
     }
 
-    function fillPerson(person, state) {
+    // Replace fillPerson to fetch by id from EXT_DB_CRUD with base64 support
+    async function fillPersonById(id, state) {
+        const person = await dbRead(id);
+        console.log(person);
+        if (!person) return;
+        
         const setValue = (selector, value, triggerChange = false) => {
             const el = document.querySelector(selector);
             if (el) {
@@ -767,33 +887,57 @@
         ];
 
         fields.forEach(([selector, value]) => setValue(selector, value));
-
-        // Fields with change events
         setValue('#id_gender', person.gender, true);
         setValue('#id_duration', person.duration, true);
         setValue('#id_entry_option', person.entry, true);
-        state.filpid = person.id;
-        // Trigger external workflow
-        window.dispatchEvent(new CustomEvent('automa:execute-workflow', {
-            detail: {
-                publicId: 'fill-kabul',
-                data: {
-                    variables: {
-                        photo: person.photo,
-                        pass: person.pass,
-                        update: person.update,
-                        tsf: person.tsf,
-                        tsb: person.tsb
+        state.filpid = person.key;
+
+        // Inject base64 images back into file inputs
+        const injectImageToInput = async (base64, inputSelector, filename) => {
+            if (base64) {
+                try {
+                    const input = document.querySelector(inputSelector);
+                    if (input && input.type === 'file') {
+                        const blob = await base64ToBlob(base64, filename);
+                        await injectBlobAsFile(input, blob, filename);
                     }
+                } catch (error) {
+                    console.error(`Error injecting image to ${inputSelector}:`, error);
                 }
             }
-        }));
+        };
+
+        // Inject all stored images back into file inputs
+        await Promise.all([
+            injectImageToInput(person.photoBase64, '#id_picture', 'photo.jpeg'),
+            injectImageToInput(person.passBase64, '#id_passport_image', 'passport.jpeg'),
+            injectImageToInput(person.tsfBase64, '#id_extra_country_2231', 'tsf.jpeg'),
+            injectImageToInput(person.tsbBase64, '#id_extra_1541', 'tsb.jpeg'),
+            injectImageToInput(person.updateBase64, '#id_extra_country_2141', 'update.jpeg')
+        ]);
     }
 
-    function deletePersonById(state) {
-        var autofill = JSON.parse(localStorage.getItem('autofill'));
-        const filterd = autofill.filter(person => person.id !== state.filpid);
-        localStorage.setItem('autofill', JSON.stringify(filterd));
+    // Replace deletePersonById to use EXT_DB_CRUD
+    async function deletePersonById(state) {
+        if (state.filpid) {
+            await dbDelete(state.filpid);
+        }
+    }
+
+    // Helper to render autofill person buttons (async)
+    async function renderPersonButtons(state) {
+        const persons = await dbList();
+        const aks = document.getElementById("inSlider");
+        if (aks) {
+            persons.forEach(p => {
+                const btn = document.createElement("button");
+                btn.textContent = p.name;
+                btn.className = "btn btn-light btn-sm";
+                btn.style.margin = "5px";
+                btn.onclick = () => fillPersonById(p.key, state);
+                aks.parentNode.insertBefore(btn, aks.nextSibling);
+            });
+        }
     }
 
     function createAutoClickButton({
@@ -1310,42 +1454,28 @@
         fbt(form, state, 'second', sounds);
         fast(state, "https://evisatraveller.mfa.ir/en/request/applyrequest/#", "final-form-submit");
 
-        const autofill = localStorage.getItem('autofill');
-        if (autofill) {
-            try {
-                const persons = JSON.parse(autofill);
+        const autofillSection = async () => {
                 const aks = document.getElementById("inSlider");
-
                 if (aks) {
+                // Save & Update button
                     const saveBtn = document.createElement("button");
                     saveBtn.textContent = "Save & Update";
                     saveBtn.className = "btn btn-info btn-sm";
                     saveBtn.style.margin = "5px";
                     saveBtn.onclick = () => storePerson(state);
                     aks.parentNode.insertBefore(saveBtn, aks.nextSibling);
-
+                // Delete button
                     const deleteBtn = document.createElement("button");
                     deleteBtn.textContent = "Delete";
                     deleteBtn.className = "btn btn-info btn-sm";
                     deleteBtn.style.margin = "5px";
                     deleteBtn.onclick = () => deletePersonById(state);
                     aks.parentNode.insertBefore(deleteBtn, aks.nextSibling);
-
-                    persons.forEach(p => {
-                        const btn = document.createElement("button");
-                        btn.textContent = p.name;
-                        btn.className = "btn btn-light btn-sm";
-                        btn.style.margin = "5px";
-                        btn.onclick = () => fillPerson(p, state);
-                        aks.parentNode.insertBefore(btn, aks.nextSibling);
-                    });
-                }
-            } catch (e) {
+                // Render person buttons
+                await renderPersonButtons(state);
             }
-        } else {
-            const empt = [];
-            localStorage.setItem("autofill", JSON.stringify(empt));
-        }
+        };
+        autofillSection();
     }
 
     function firstPageLogic(form, state, sounds) {

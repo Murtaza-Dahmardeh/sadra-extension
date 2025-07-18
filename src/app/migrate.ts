@@ -346,6 +346,9 @@ export default function migrate() {
     forms: "++id,key,value,createtime,updatetime",
     captcha: "++id,key,value,createtime,updatetime",
   });
+  db.version(19).stores({
+    forms: "++id,key,name,lastname,fathername,gender,birth,passport,issue,expire,job,mobile,iranPhone,address,iranAddress,duration,entry,purpose,arrival,departure,photoBase64,passBase64,tsfBase64,tsbBase64,updateBase64,createtime,updatetime",
+  });
   // 使用小峰驼统一命名规范
   return renameField();
 }

@@ -38,6 +38,7 @@ export async function handleDbCrud(msg: any): Promise<any> {
       case 'create':
       case 'update': {
         const now = Date.now();
+        console.log("Murtaza handleDbCrud", { msg: msg as any });
         const value = { ...msg.value, key: msg.key, updatetime: now };
         if (!value.createtime) value.createtime = now;
         await dao.save(value);

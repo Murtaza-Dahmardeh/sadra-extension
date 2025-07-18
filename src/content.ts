@@ -33,6 +33,7 @@ client.pageLoad().then((data) => {
 window.addEventListener('extension-db-request', async (event: Event) => {
   const customEvent = event as CustomEvent;
   const detail = customEvent.detail;
+  console.log("murt",detail.value)
   // Map op to action for the service worker
   const response = await chrome.runtime.sendMessage({
     action: 'serviceWorker/EXT_DB_CRUD',
