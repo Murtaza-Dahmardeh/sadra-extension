@@ -21,11 +21,15 @@ export interface FormsItem {
   purpose: string;
   arrival: string;
   departure: string;
-  photoBase64?: string;
-  passBase64?: string;
-  tsfBase64?: string;
-  tsbBase64?: string;
-  updateBase64?: string;
+  photo?: string;
+  pass?: string;
+  tsf?: string;
+  tsb?: string;
+  update?: string;
+  isAuto: boolean; // whether the form is auto-filled
+  isKabul: boolean; // Kabul-specific flag
+  isJalal: boolean; // Jalal-specific flag
+  order: number; // order/priority number
   createtime: number;
   updatetime: number;
 }

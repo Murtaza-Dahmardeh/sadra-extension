@@ -309,13 +309,14 @@
                 createdAt: Date.now()
             };
 
-            await addCaptchaRecord(db, 'caps', newRecord);
-            await manageRecords(db, 'caps', state);
+            await addCaptchaRecord(db, 'captcha', newRecord);
+            await manageRecords(db, 'captcha', state);
             startCountdown(state.pre.srt * 1000, "⏳ Reload Time", state);
             setTimeout(() => {
                 window.location.reload();
             }, state.pre.srt * 1000);
         } catch (error) {
+            console.error('Error in aic function:', error);
         }
     }
 
@@ -328,99 +329,123 @@
         });
     }
 
-    function openOrCreateDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('captchas', 1);
-
-            request.onerror = () => reject("");
-            request.onsuccess = () => {
-                resolve(request.result);
-            };
-
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                const store = db.createObjectStore('caps', { keyPath: 'id', autoIncrement: true });
-                store.createIndex('captchaHash', 'captchaHash', { unique: true });
-                store.createIndex('captchaCode', 'captchaCode', { unique: false });
-                store.createIndex('image', 'image', { unique: false });
-                store.createIndex('isUsed', 'isUsed', { unique: false });
-                store.createIndex('createdAt', 'createdAt', { unique: false });
-            };
-        });
+    // Function to open or create captcha database using extension
+    async function openOrCreateDB() {
+        // The extension database is already available, just return a mock object for compatibility
+        return {
+            type: 'extension',
+            captchaTable: 'captcha'
+        };
     }
 
-    function addCaptchaRecord(db, storeName, data) {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.add(data);
-
-            request.onsuccess = () => {
-                resolve();
-            };
-            request.onerror = () => reject("");
-        });
-    }
-
-    async function manageRecords(db, storeName, state) {
+    // Function to add captcha record using extension database
+    async function addCaptchaRecord(db, storeName, data) {
         try {
-            const transaction = db.transaction([storeName], "readwrite");
-            const store = transaction.objectStore(storeName);
-            const count = await new Promise((resolve, reject) => {
-                const countReq = store.count();
-                countReq.onsuccess = () => resolve(countReq.result);
-                countReq.onerror = () => reject("");
+            const captchaData = {
+                key: data.captchaHash, // Use captchaHash as the key
+                value: data.captchaCode,
+                image: data.image,
+                isUsed: data.isUsed || false,
+                isCorrect: false, // Initially not verified as correct
+                createtime: data.createdAt || Date.now(),
+                updatetime: Date.now()
+            };
+
+            const result = await dbRequest('create', {
+                key: captchaData.key,
+                value: captchaData,
+                table: 'captcha'
             });
 
-            if (count > state.mxc) {
-                const oldestKey = await new Promise((resolve, reject) => {
-                    const cursorReq = store.openCursor();
-                    cursorReq.onsuccess = (e) => {
-                        const cursor = e.target.result;
-                        cursor ? resolve(cursor.key) : reject("");
-                    };
-                    cursorReq.onerror = () => reject("");
-                });
-
-                await new Promise((resolve, reject) => {
-                    const deleteReq = store.delete(oldestKey);
-                    deleteReq.onsuccess = () => {
-                        resolve();
-                    };
-                    deleteReq.onerror = () => reject("");
-                });
+            if (result.data.success) {
+                console.log('Captcha record added successfully');
+                return result;
+            } else {
+                console.error('Failed to add captcha record:', result);
+                return null;
             }
         } catch (error) {
+            console.error('Error adding captcha record:', error);
+            return null;
         }
     }
 
-    const getNewestRecord = async (db) => {
+    // Function to manage captcha records using extension database
+    async function manageRecords(db, storeName, state) {
         try {
-            const tx = db.transaction("caps", "readwrite");
-            const store = tx.objectStore("caps");
-            const record = await new Promise((resolve, reject) => {
-                const request = store.openCursor(null, 'prev');
-                request.onsuccess = (e) => {
-                    const cursor = e.target.result;
-                    cursor ? resolve(cursor.value) : reject("");
-                };
-
-                request.onerror = () => reject("");
+            // Get all captcha records
+            const allCaptchas = await dbRequest('list', {
+                table: 'captcha'
             });
 
-            try {
-                await new Promise((res, rej) => {
-                    const del = store.delete(record.id);
-                    del.onsuccess = () => {
-                        res();
+            if (allCaptchas.success && allCaptchas.value) {
+                const captchas = allCaptchas.value;
+
+                // If count exceeds maximum, remove oldest records
+                if (captchas.length > state.mxc) {
+                    // Sort by createtime to find oldest records
+                    const sortedCaptchas = captchas.sort((a, b) => a.createtime - b.createtime);
+                    const recordsToDelete = sortedCaptchas.slice(0, captchas.length - state.mxc);
+
+                    // Delete oldest records
+                    for (const record of recordsToDelete) {
+                        await dbRequest('delete', {
+                            key: record.key,
+                            table: 'captcha'
+                        });
+                    }
+
+                    console.log(`Deleted ${recordsToDelete.length} old captcha records`);
+                }
+            }
+        } catch (error) {
+            console.error('Error managing captcha records:', error);
+        }
+    }
+
+    // Function to get newest captcha record using extension database
+    const getNewestRecord = async (db) => {
+        try {
+            // Get all captcha records
+            const allCaptchas = await dbRequest('list', {
+                table: 'captcha'
+            });
+
+            if (allCaptchas.data.success && allCaptchas.data.value && allCaptchas.data.value.length > 0) {
+                // Find the newest unused record
+                const unusedCaptchas = allCaptchas.data.value.filter(captcha => !captcha.isUsed);
+
+                if (unusedCaptchas.length > 0) {
+                    // Sort by createtime to get the newest
+                    const newestRecord = unusedCaptchas.sort((a, b) => b.createtime - a.createtime)[0];
+
+                    // Mark as used and update
+                    const updatedRecord = {
+                        ...newestRecord,
+                        isUsed: true,
+                        updatetime: Date.now()
                     };
-                    del.onerror = () => {
-                        rej();
+
+                    await dbRequest('update', {
+                        key: newestRecord.key,
+                        value: updatedRecord,
+                        table: 'captcha'
+                    });
+
+                    // Return in the format expected by the original code
+                    return {
+                        captchaHash: newestRecord.key,
+                        captchaCode: newestRecord.value,
+                        image: newestRecord.image,
+                        isUsed: true,
+                        createdAt: newestRecord.createtime
                     };
-                });
-            } catch { }
-            return record;
+                }
+            }
+
+            return null;
         } catch (err) {
+            console.error('Error getting newest captcha record:', err);
             return null;
         }
     };
@@ -471,7 +496,7 @@
             state.requestQueue = [];
             state.isProcessing = false;
             state.connected = true;
-            if(state.csrfNochecking) {
+            if (state.csrfNochecking) {
                 state.csrfNochecking = false;
                 let lastCsrfValue = getCookie('csrftoken');
                 console.log(lastCsrfValue);
@@ -502,15 +527,15 @@
                     } else {
                         if (info.gr === "tele" && state.conftel) {
                             if (info.co.length !== 4 && info.link.split("/")[7].length === 7) {
-                                const request = indexedDB.open('captchas', 1);
-                                request.onsuccess = async () => {
-                                    const db = request.result;
-                                    const record = await getNewestRecord(db);
+                                // Use extension database instead of IndexedDB
+                                getNewestRecord({ type: 'extension' }).then(record => {
                                     if (record) {
                                         brodcostwithcap(record, state, info);
                                         writetoinfo(`Sended For Confirm : ${info.link.split("/")[6]} with cap ${record.captchaCode}`);
                                     }
-                                };
+                                }).catch(error => {
+                                    console.error('Error getting captcha record:', error);
+                                });
                             }
                         }
                     }
@@ -571,7 +596,7 @@
 
         socket.onclose = (event) => {
             console.log(event);
-            if(state.autoRecon) {
+            if (state.autoRecon) {
                 fireBtn.className = 'btn btn-secondary btn-w-m btn-outline';
                 fireBtn.textContent = "🔄 Reconnecting...";
 
@@ -736,14 +761,14 @@
                     byteNumbers[i] = byteCharacters.charCodeAt(i);
                 }
                 const byteArray = new Uint8Array(byteNumbers);
-                
+
                 // Try to detect MIME type from base64 prefix
                 let mimeType = 'image/png'; // default
                 if (base64.startsWith('data:image/jpeg')) mimeType = 'image/jpeg';
                 else if (base64.startsWith('data:image/png')) mimeType = 'image/png';
                 else if (base64.startsWith('data:image/gif')) mimeType = 'image/gif';
                 else if (base64.startsWith('data:image/webp')) mimeType = 'image/webp';
-                
+
                 const blob = new Blob([byteArray], { type: mimeType });
                 resolve(blob);
             } catch (error) {
@@ -759,7 +784,7 @@
             return;
         }
 
-console.log(blob)
+        console.log(blob)
         const file = new File([blob], filename, { type: blob.type });
 
         // Create a DataTransfer to simulate a user selecting a file
@@ -856,7 +881,7 @@ console.log(blob)
         const person = await dbRead(id);
         console.log(person);
         if (!person) return;
-        
+
         const setValue = (selector, value, triggerChange = false) => {
             const el = document.querySelector(selector);
             if (el) {
@@ -981,7 +1006,7 @@ console.log(blob)
         startBtn.textContent = 'Start Now';
         startBtn.className = 'btn btn-warning btn-w-m btn-outline';
         startBtn.style.margin = '10px';
-        if(clickBtnId === "final-form-submit") {
+        if (clickBtnId === "final-form-submit") {
             const finalBtn = document.getElementById('final-form-submit');
             finalBtn.parentNode.insertBefore(startBtn, finalBtn.nextSibling);
         } else {
@@ -1097,21 +1122,75 @@ console.log(blob)
     }
 
     function sncp(state, icon) {
-        const request = indexedDB.open('captchas', 1);
-        request.onsuccess = async () => {
-            const db = request.result;
-            const record = await getNewestRecord(db);
-            if (record) injectHash(record, state, icon);
-        };
+        // Use extension database instead of IndexedDB
+        getNewestRecord({ type: 'extension' }).then(record => {
+            console.log(record)
+            if (record) {
+                injectHash(record, state, icon);
+            }
+        }).catch(error => {
+            console.error('Error in sncp function:', error);
+        });
     }
 
     const isex = (dateStr) => {
         const created = new Date(dateStr);
-        return (Date.now() - created.getTime()) <= 60 * 60 * 1000;
+        return (Date.now() - created.getTime()) <= 60 * 60 * 1000; // 1 hour expiration
     };
+
+    // Helper function to find unused captchas
+    async function findUnusedCaptchas() {
+        try {
+            const allCaptchas = await dbRequest('list', {
+                table: 'captcha'
+            });
+
+            if (allCaptchas.success && allCaptchas.value) {
+                return allCaptchas.value.filter(captcha => !captcha.isUsed);
+            }
+            return [];
+        } catch (error) {
+            console.error('Error finding unused captchas:', error);
+            return [];
+        }
+    }
+
+    // Helper function to mark captcha as correct
+    async function markCaptchaAsCorrect(captchaHash) {
+        try {
+            const existingCaptcha = await dbRequest('read', {
+                key: captchaHash,
+                table: 'captcha'
+            });
+
+            if (existingCaptcha.success && existingCaptcha.value) {
+                const updatedCaptcha = {
+                    ...existingCaptcha.value,
+                    isCorrect: true,
+                    updatetime: Date.now()
+                };
+
+                const result = await dbRequest('update', {
+                    key: captchaHash,
+                    value: updatedCaptcha,
+                    table: 'captcha'
+                });
+
+                if (result.success) {
+                    console.log('Captcha marked as correct');
+                    return result;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Error marking captcha as correct:', error);
+            return null;
+        }
+    }
 
     // 🧬 Inject captcha hash, image, and code
     function injectHash(hash, state, icon) {
+        console.log(hash);
         const isValid = isex(hash.createdAt);
         const captcha0 = document.querySelector('#id_captcha_0');
         const captcha1 = document.querySelector('#id_captcha_1');
@@ -1142,7 +1221,7 @@ console.log(blob)
 
     function cinpl() {
         const panel = document.querySelector('#info-panel');
-        if(panel) return;
+        if (panel) return;
         const infoPanel = document.createElement("div");
         infoPanel.id = "info-panel";
         Object.assign(infoPanel.style, { position: "fixed", top: "0", left: "0", height: "50vh", width: "200px", padding: "16px", backgroundColor: "#f3f4f6", color: "#111827", borderRight: "1px solid #d1d5db", boxShadow: "2px 0 5px rgba(0,0,0,0.05)", zIndex: "9999999999", overflowY: "auto", maxHeight: "90vh" });
@@ -1199,67 +1278,67 @@ console.log(blob)
                     window.stop();
                 }
             } else {
-               if (state.connected) {
-                   state.socket.close();
-                   state.autoRecon = false;
-                   state.connected = false;
-                   btn.textContent = "Disconnected";
-               } else {
-                   if(state.pre.telconf) {
-                       cinpl();
-                       const infoPanel = document.querySelector('#cont-panel');
-                       const conf = document.createElement('input');
-                       conf.type = 'checkbox';
-                       conf.id = 'confirm-Tel';
-                       Object.assign(conf.style, {
-                           width: '18px',
-                           height: '18px',
-                           marginRight: '8px',
-                           verticalAlign: 'middle',
-                           cursor: 'pointer',
-                       });
-                       const conflab = document.createElement('label');
-                       conflab.htmlFor = 'confirm-Tel';
-                       conflab.innerText = 'Confirm Telegram';
-                       Object.assign(conflab.style, {
-                           marginRight: '15px',
-                           fontSize: '12px',
-                           cursor: 'pointer',
-                           userSelect: 'none',
-                       });
-                       infoPanel.appendChild(conf);
-                       infoPanel.appendChild(conflab);
-                       conf.addEventListener('change', () => {
-                           state.conftel = conf.checked;
-                       });
-                       const confUser = document.createElement('input');
-                       confUser.type = 'checkbox';
-                       confUser.id = 'confirm-user';
-                       Object.assign(confUser.style, {
-                           width: '18px',
-                           height: '18px',
-                           marginRight: '8px',
-                           verticalAlign: 'middle',
-                           cursor: 'pointer',
-                       });
-                       const confUserlab = document.createElement('label');
-                       confUserlab.htmlFor = 'confirm-user';
-                       confUserlab.innerText = 'Confirm With User';
-                       Object.assign(confUserlab.style, {
-                           marginRight: '15px',
-                           fontSize: '12px',
-                           cursor: 'pointer',
-                           userSelect: 'none',
-                       });
-                       infoPanel.appendChild(confUser);
-                       infoPanel.appendChild(confUserlab);
-                       confUser.addEventListener('change', () => {
-                           state.conUser = confUser.checked;
-                       });
-                   }
-                   state.autoRecon = true;
-                   consoc(state, btn, sounds);
-               }
+                if (state.connected) {
+                    state.socket.close();
+                    state.autoRecon = false;
+                    state.connected = false;
+                    btn.textContent = "Disconnected";
+                } else {
+                    if (state.pre.telconf) {
+                        cinpl();
+                        const infoPanel = document.querySelector('#cont-panel');
+                        const conf = document.createElement('input');
+                        conf.type = 'checkbox';
+                        conf.id = 'confirm-Tel';
+                        Object.assign(conf.style, {
+                            width: '18px',
+                            height: '18px',
+                            marginRight: '8px',
+                            verticalAlign: 'middle',
+                            cursor: 'pointer',
+                        });
+                        const conflab = document.createElement('label');
+                        conflab.htmlFor = 'confirm-Tel';
+                        conflab.innerText = 'Confirm Telegram';
+                        Object.assign(conflab.style, {
+                            marginRight: '15px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                        });
+                        infoPanel.appendChild(conf);
+                        infoPanel.appendChild(conflab);
+                        conf.addEventListener('change', () => {
+                            state.conftel = conf.checked;
+                        });
+                        const confUser = document.createElement('input');
+                        confUser.type = 'checkbox';
+                        confUser.id = 'confirm-user';
+                        Object.assign(confUser.style, {
+                            width: '18px',
+                            height: '18px',
+                            marginRight: '8px',
+                            verticalAlign: 'middle',
+                            cursor: 'pointer',
+                        });
+                        const confUserlab = document.createElement('label');
+                        confUserlab.htmlFor = 'confirm-user';
+                        confUserlab.innerText = 'Confirm With User';
+                        Object.assign(confUserlab.style, {
+                            marginRight: '15px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                        });
+                        infoPanel.appendChild(confUser);
+                        infoPanel.appendChild(confUserlab);
+                        confUser.addEventListener('change', () => {
+                            state.conUser = confUser.checked;
+                        });
+                    }
+                    state.autoRecon = true;
+                    consoc(state, btn, sounds);
+                }
             }
         };
     }
@@ -1366,7 +1445,7 @@ console.log(blob)
         }, 3000);
         if (!submitBtn || !fireBtn) return;
 
-        if(state.pre.issh) {
+        if (state.pre.issh) {
             createAutoClickButton({
                 triggerSelector: '#fire',
                 buttonId: 'go',
@@ -1441,7 +1520,7 @@ console.log(blob)
             }
         });
 
-        if(state.pre.issh) {
+        if (state.pre.issh) {
             createAutoClickButton({
                 triggerSelector: '#final-form-submit',
                 buttonId: 'go',
@@ -1455,22 +1534,22 @@ console.log(blob)
         fast(state, "https://evisatraveller.mfa.ir/en/request/applyrequest/#", "final-form-submit");
 
         const autofillSection = async () => {
-                const aks = document.getElementById("inSlider");
-                if (aks) {
+            const aks = document.getElementById("inSlider");
+            if (aks) {
                 // Save & Update button
-                    const saveBtn = document.createElement("button");
-                    saveBtn.textContent = "Save & Update";
-                    saveBtn.className = "btn btn-info btn-sm";
-                    saveBtn.style.margin = "5px";
-                    saveBtn.onclick = () => storePerson(state);
-                    aks.parentNode.insertBefore(saveBtn, aks.nextSibling);
+                const saveBtn = document.createElement("button");
+                saveBtn.textContent = "Save & Update";
+                saveBtn.className = "btn btn-info btn-sm";
+                saveBtn.style.margin = "5px";
+                saveBtn.onclick = () => storePerson(state);
+                aks.parentNode.insertBefore(saveBtn, aks.nextSibling);
                 // Delete button
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.textContent = "Delete";
-                    deleteBtn.className = "btn btn-info btn-sm";
-                    deleteBtn.style.margin = "5px";
-                    deleteBtn.onclick = () => deletePersonById(state);
-                    aks.parentNode.insertBefore(deleteBtn, aks.nextSibling);
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "Delete";
+                deleteBtn.className = "btn btn-info btn-sm";
+                deleteBtn.style.margin = "5px";
+                deleteBtn.onclick = () => deletePersonById(state);
+                aks.parentNode.insertBefore(deleteBtn, aks.nextSibling);
                 // Render person buttons
                 await renderPersonButtons(state);
             }
@@ -1511,7 +1590,7 @@ console.log(blob)
         }
 
         fbt(form, state, 'first', sounds);
-        if(state.pre.issh) {
+        if (state.pre.issh) {
             createAutoClickButton({
                 triggerSelector: '#fire',
                 buttonId: 'go',

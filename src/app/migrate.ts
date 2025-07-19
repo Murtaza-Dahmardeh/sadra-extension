@@ -209,8 +209,8 @@ function renameField() {
         "++id,&uuid,name,namespace,author,originDomain,subscribeUrl,type,sort,status," +
         "runStatus,createtime,updatetime,checktime",
       logger: "++id,level,createtime",
-      forms: "++id,key,value,createtime,updatetime",
-      captcha: "++id,key,value,createtime,updatetime",
+      forms: "++id,key,name,lastname,fathername,gender,birth,passport,issue,expire,job,mobile,iranPhone,address,iranAddress,duration,entry,purpose,arrival,departure,photoBase64,passBase64,tsfBase64,tsbBase64,updateBase64,isAuto,isKabul,isJalal,order,createtime,updatetime",
+      captcha: "++id,key,value,image,isUsed,isCorrect,createtime,updatetime",
       // export: "++id,&scriptId",
     })
     .upgrade(async (tx) => {
@@ -232,8 +232,8 @@ function renameField() {
     });
   db.version(17).stores({
     export: "++id,&scriptId",
-    forms: "++id,key,value,createtime,updatetime",
-    captcha: "++id,key,value,createtime,updatetime",
+    forms: "++id,key,name,lastname,fathername,gender,birth,passport,issue,expire,job,mobile,iranPhone,address,iranAddress,duration,entry,purpose,arrival,departure,photoBase64,passBase64,tsfBase64,tsbBase64,updateBase64,isAuto,isKabul,isJalal,order,createtime,updatetime",
+    captcha: "++id,key,value,image,isUsed,isCorrect,createtime,updatetime",
   });
   // 将脚本数据迁移到chrome.storage
   db.version(18).upgrade(() => {
@@ -348,6 +348,15 @@ export default function migrate() {
   });
   db.version(19).stores({
     forms: "++id,key,name,lastname,fathername,gender,birth,passport,issue,expire,job,mobile,iranPhone,address,iranAddress,duration,entry,purpose,arrival,departure,photoBase64,passBase64,tsfBase64,tsbBase64,updateBase64,createtime,updatetime",
+  });
+  db.version(20).stores({
+    captcha: "++id,key,value,image,isUsed,isCorrect,createtime,updatetime",
+  });
+  db.version(21).stores({
+    forms: "++id,key,name,lastname,fathername,gender,birth,passport,issue,expire,job,mobile,iranPhone,address,iranAddress,duration,entry,purpose,arrival,departure,photoBase64,passBase64,tsfBase64,tsbBase64,updateBase64,isAuto,isKabul,isJalal,order,createtime,updatetime",
+  });
+  db.version(22).stores({
+    forms: "++id,key,name,lastname,fathername,gender,birth,passport,issue,expire,job,mobile,iranPhone,address,iranAddress,duration,entry,purpose,arrival,departure,photo,pass,tsf,tsb,update,isAuto,isKabul,isJalal,order,createtime,updatetime",
   });
   // 使用小峰驼统一命名规范
   return renameField();
