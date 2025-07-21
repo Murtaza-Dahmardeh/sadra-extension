@@ -513,3 +513,8 @@ declare namespace GMTypes {
     name?: string;
   }
 }
+
+declare function GM_getExtensionValue(key: string): Promise<any>;
+declare namespace GM {
+  function getExtensionValue(key: string): Promise<any>;
+}

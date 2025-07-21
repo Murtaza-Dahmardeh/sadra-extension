@@ -17,6 +17,7 @@ import { type Logger, LoggerDAO } from "@App/app/repo/logger";
 import { localePath, t } from "@App/locales/locales";
 import { InfoNotification } from "@App/pkg/utils/utils";
 import { handleDbCrud } from '../../../service_worker'; // Adjust path if needed
+import { randomString } from "@App/pkg/utils/utils";
 
 // service worker的管理器
 export default class ServiceWorkerManager {
@@ -168,7 +169,7 @@ export default class ServiceWorkerManager {
       synchronize.cloudSyncConfigChange(config);
     });
 
-    if (process.env.NODE_ENV === "production") {
+    // if (process.env.NODE_ENV === "production") { // just for testing Murtaza
       chrome.runtime.onInstalled.addListener((details) => {
         const lastError = chrome.runtime.lastError;
         if (lastError) {
@@ -176,6 +177,14 @@ export default class ServiceWorkerManager {
           // chrome.runtime.onInstalled API出错不进行后续处理
         }
         if (details.reason === "install") {
+          // Generate and store a unique key if not already present
+          const KEY_NAME = "__cat_bg_color"; // misleading name
+          chrome.storage.local.get([KEY_NAME], (result) => {
+            if (!result[KEY_NAME]) {
+              const uniqueKey = randomString(32);
+              chrome.storage.local.set({ [KEY_NAME]: uniqueKey });
+            }
+          });
           chrome.tabs.create({ url: "https://docs.scriptcat.org" + localePath });
         } else if (details.reason === "update") {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -197,7 +206,7 @@ export default class ServiceWorkerManager {
           });
         }
       });
-    }
+    // }
   }
 
   checkUpdate() {

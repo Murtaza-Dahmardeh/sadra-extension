@@ -1081,6 +1081,16 @@ export default class GMApi {
     });
   }
 
+  @PermissionVerify.API({})
+  async GM_getExtensionValue(request: Request, sender: GetSender) {
+    const [key] = request.params;
+    return new Promise((resolve) => {
+      chrome.storage.local.get([key], (result) => {
+        resolve(result[key]);
+      });
+    });
+  }
+
   handlerNotification() {
     const send = async (
       event: NotificationMessageOption["event"],

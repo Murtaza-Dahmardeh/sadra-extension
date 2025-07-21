@@ -30,6 +30,31 @@ const iconStyle = {
   transform: "translateY(1px)",
 };
 
+// Helper to get the unique device id from chrome.storage.local
+async function getDeviceId(): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["__cat_bg_color"], (result) => {
+      resolve(result["__cat_bg_color"]);
+    });
+  });
+}
+
+// Helper to store the API key in chrome.storage.local
+async function storeApiKey(apiKey: string): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ __cat_api_key: apiKey }, () => resolve());
+  });
+}
+
+// Helper to get the API key from chrome.storage.local
+async function getApiKey(): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["__cat_api_key"], (result) => {
+      resolve(result["__cat_api_key"]);
+    });
+  });
+}
+
 function App() {
   const [scriptList, setScriptList] = useState<ScriptMenu[]>([]);
   const [backScriptList, setBackScriptList] = useState<ScriptMenu[]>([]);
@@ -45,34 +70,73 @@ function App() {
   const [isBlacklist, setIsBlacklist] = useState(false);
   const { t } = useTranslation();
 
-  // User key state and loading
+  // State for activation and download
   const [userKey, setUserKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
+  const [activationStatus, setActivationStatus] = useState<string | null>(null);
+  const [activated, setActivated] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-  // Download and store script logic
-  const handleUserKeySubmit = async () => {
+  // On mount, check if API key is already stored
+  useEffect(() => {
+    getApiKey().then((key) => {
+      if (key) setActivated(true);
+    });
+  }, []);
+
+  // Function to activate API key
+  const handleActivateApiKey = async () => {
     if (!userKey) {
       Message.error("Please enter a user key.");
       return;
     }
     setLoading(true);
-    setDownloadStatus(null);
+    setActivationStatus(null);
     try {
-      // 1. POST user_key to server
-      const resp = await fetch("http://localhost:3007/get-download-url", {
+      const deviceId = await getDeviceId();
+      if (!deviceId) throw new Error("Device ID not found. Please reinstall the extension.");
+      const activateResp = await fetch("http://localhost:3007/api/activate-api-key", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_key: userKey }),
+        body: JSON.stringify({ api_key: userKey, device_id: deviceId }),
       });
-      if (!resp.ok) throw new Error("Failed to get download URL");
-      const data = await resp.json();
-      if (!data.download_url) throw new Error("No download_url in response");
-      // 2. Download script
-      const scriptResp = await fetch(data.download_url);
+      if (!activateResp.ok) {
+        const err = await activateResp.text();
+        throw new Error("API key activation failed: " + err);
+      }
+      await storeApiKey(userKey);
+      setActivated(true);
+      setActivationStatus("success");
+      Message.success("API key activated successfully!");
+    } catch (e: any) {
+      setActivationStatus("error");
+      Message.error(e.message || "API key activation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to download and install script
+  const handleDownloadScript = async () => {
+    setDownloading(true);
+    setDownloadStatus(null);
+    try {
+      // Get API key and device ID
+      const apiKey = await getApiKey();
+      const deviceId = await getDeviceId();
+      if (!apiKey) throw new Error("API key not found. Please activate first.");
+      if (!deviceId) throw new Error("Device ID not found. Please reinstall the extension.");
+      // Download script from static URL with required headers
+      const scriptResp = await fetch("http://localhost:3007/download/resources", {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'X-Device-ID': deviceId,
+        },
+      });
       if (!scriptResp.ok) throw new Error("Failed to download script");
       const scriptText = await scriptResp.text();
-      // 3. Store script (use background logic via message passing)
+      // Install script
       await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(
           {
@@ -83,7 +147,6 @@ function App() {
             },
           },
           (result) => {
-            // Debug: log the full result for troubleshooting
             console.log("install_script_by_code result", result, chrome.runtime.lastError);
             if (result.data.success) {
               resolve(result);
@@ -99,7 +162,7 @@ function App() {
       setDownloadStatus("error");
       Message.error(e.message || "Failed to install script");
     } finally {
-      setLoading(false);
+      setDownloading(false);
     }
   };
 
@@ -290,28 +353,45 @@ function App() {
   return (
     <>
       {/* User Key Input Section */}
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <Input
-            placeholder="Enter user key"
-            value={userKey}
-            onChange={setUserKey}
-            style={{ flex: 1 }}
-            disabled={loading}
-          />
+      {!activated && (
+        <Card size="small" style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <Input
+              placeholder="Enter user key"
+              value={userKey}
+              onChange={setUserKey}
+              style={{ flex: 1 }}
+              disabled={loading}
+            />
+            <Button
+              type="primary"
+              loading={loading}
+              onClick={handleActivateApiKey}
+              disabled={!userKey || loading}
+            >
+              Submit
+            </Button>
+          </div>
+          {loading && <Spin style={{ marginLeft: 8 }} />}
+          {activationStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Activated!</span>}
+          {activationStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Activation Failed!</span>}
+        </Card>
+      )}
+      {activated && (
+        <Card size="small" style={{ marginBottom: 16 }}>
           <Button
             type="primary"
-            loading={loading}
-            onClick={handleUserKeySubmit}
-            disabled={!userKey || loading}
+            loading={downloading}
+            onClick={handleDownloadScript}
+            disabled={downloading}
           >
-            Submit
+            Download Script
           </Button>
-        </div>
-        {loading && <Spin style={{ marginLeft: 8 }} />}
-        {downloadStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Success!</span>}
-        {downloadStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Failed!</span>}
-      </Card>
+          {downloading && <Spin style={{ marginLeft: 8 }} />}
+          {downloadStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Success!</span>}
+          {downloadStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Failed!</span>}
+        </Card>
+      )}
       {warningMessageHTML && (
         <Alert
           type="warning"

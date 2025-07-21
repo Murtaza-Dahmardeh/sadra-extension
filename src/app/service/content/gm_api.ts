@@ -1150,6 +1150,11 @@ export default class GMApi extends GM_Base {
   ["window.focus"]() {
     return this.sendMessage("window.focus", []);
   }
+
+  @GMContext.API({ alias: "GM.getExtensionValue" })
+  public GM_getExtensionValue(key: string): Promise<any> {
+    return this.sendMessage("GM_getExtensionValue", [key]);
+  }
 }
 
 // 從 GM_Base 對象中解構出 createGMBase 函数並導出（可供其他模塊使用）
