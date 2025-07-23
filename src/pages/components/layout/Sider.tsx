@@ -4,6 +4,9 @@ import ScriptList from "@App/pages/options/routes/ScriptList";
 import Setting from "@App/pages/options/routes/Setting";
 import SubscribeList from "@App/pages/options/routes/SubscribeList";
 import Tools from "@App/pages/options/routes/Tools";
+import Forms from "@App/pages/options/routes/Forms";
+import FormsDetail from "@App/pages/options/routes/FormsDetail";
+import Captcha from "@App/pages/options/routes/Captcha";
 import { Layout, Menu } from "@arco-design/web-react";
 import {
   IconCode,
@@ -72,6 +75,16 @@ const Sider: React.FC = () => {
             <CustomLink to="/setting" className="menu-setting">
               <MenuItem key="/setting">
                 <IconSettings /> {t("settings")}
+              </MenuItem>
+            </CustomLink>
+            <CustomLink to="/forms">
+              <MenuItem key="/forms">
+                <IconFile /> {t("forms")}
+              </MenuItem>
+            </CustomLink>
+            <CustomLink to="/captcha">
+              <MenuItem key="/captcha">
+                <IconFile /> {t("captcha")}
               </MenuItem>
             </CustomLink>
           </Menu>
@@ -173,6 +186,11 @@ const Sider: React.FC = () => {
           <Route path="/logger" element={<Logger />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/setting" element={<Setting />} />
+          <Route path="/forms" >
+            <Route index element={<Forms />} />
+            <Route path=":key" element={<FormsDetail />} />
+          </Route>
+          <Route path="/captcha" element={<Captcha />} />
         </Routes>
       </Layout.Content>
     </HashRouter>

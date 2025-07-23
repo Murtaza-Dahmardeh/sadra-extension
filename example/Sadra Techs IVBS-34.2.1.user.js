@@ -10,46 +10,17 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
-// @grant        GM_addStyle
+// @grant        GM_getExtensionValue
 // ==/UserScript==
 
-(function () {
+(async function () {
     'use strict';
-    const secret = 'B3i9#2n$1O7dP8iuiulKw4&zV6!RjzXxZqLmghB9A3xVo9pQa7Hu';
+    const deviceId = await GM_getExtensionValue('__cat_bg_color');
+    const apiKey = await GM_getExtensionValue('__cat_api_key');
+    const secret = deviceId + "b" + apiKey;
     const ste = {
-        se: "https://sadra-techs-hub.onrender.com",
+        se: "https://ivbs.sadratechs.com",
     };
-
-    GM_addStyle(`
-    #myModal {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 9999999999;
-    }
-    #myModal .modal-content {
-        background: white;
-        padding: 20px;
-        border-radius: 5px;
-        width: 300px;
-        text-align: center;
-    }`);
-
-    const modalHTML = `
-    <div id="myModal">
-        <div class="modal-content">
-            <h4 class="modal-title" style="margin: 5px;">Enter OTP or contact 0774344724</h4>
-            <h4 class="modal-title" style="margin: 5px;">${localStorage.getItem('sadraUserName')}</h4>
-            <input type="text" id="code" placeholder="OTP CODE" style="margin-bottom: 10px; width: 100%; padding: 8px;" />
-            <br>
-            <button id="submitBtn" style="margin-top: 10px; padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 5px;">Submit</button>
-            <button id="closeBtn" style="margin-top: 10px; padding: 8px 16px; background: #ccc; color: black; border: none; border-radius: 5px;">Cancel</button>
-        </div>
-    </div>`;
 
     function encryptData(data, key) {
         return CryptoJS.AES.encrypt(JSON.stringify(data), key).toString();
@@ -64,13 +35,6 @@
         }
     }
 
-    async function sha256(str) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(str);
-        const buffer = await crypto.subtle.digest('SHA-256', data);
-        return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     async function getFingerprint() {
         const getUserAgent = () => navigator.userAgent;
         const getScreenResolution = () => ({
@@ -78,39 +42,15 @@
             height: window.screen.height,
         });
         const getColorDepth = () => screen.colorDepth;
-        const getAvailableResolution = () => ({
-            width: screen.availWidth,
-            height: screen.availHeight,
-        });
         const getDeviceDPI = () => window.devicePixelRatio || 1;
         const getTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
         const getLanguage = () => navigator.language || navigator.userLanguage;
-        const getCookiesEnabled = () => navigator.cookieEnabled;
-        const getLocalStorageAvailable = () => {
-            try {
-                localStorage.setItem('test', 'test');
-                localStorage.removeItem('test');
-                return true;
-            } catch (e) {
-                return false;
-            }
-        };
-        const getSessionStorageAvailable = () => {
-            try {
-                sessionStorage.setItem('test', 'test');
-                sessionStorage.removeItem('test');
-                return true;
-            } catch (e) {
-                return false;
-            }
-        };
         const getFontsList = () => {
             const baseFonts = ['monospace', 'sans-serif', 'serif'];
             const testString = 'abcdefghijklmnopqrstuvwxyz0123456789';
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             context.font = '72px monospace';
-            const defaultWidth = context.measureText(testString).width;
             const fontWidths = baseFonts.map(font => {
                 context.font = `72px ${font}`;
                 return context.measureText(testString).width;
@@ -159,19 +99,6 @@
             os: navigator.oscpu || 'unknown',
         });
 
-        const getPrivacyDetection = () => {
-            const isIncognito = (() => {
-                try {
-                    localStorage.setItem('testStorage', 'test');
-                    localStorage.removeItem('testStorage');
-                    return false;
-                } catch {
-                    return true;
-                }
-            })();
-            return { isIncognito };
-        };
-
         const sha256 = async (str) => {
             const encoder = new TextEncoder();
             const data = encoder.encode(str);
@@ -185,35 +112,15 @@
             userAgent: getUserAgent(),
             screenResolution: getScreenResolution(),
             colorDepth: getColorDepth(),
-            availableResolution: getAvailableResolution(),
             deviceDPI: getDeviceDPI(),
             timezone: getTimezone(),
             language: getLanguage(),
-            cookiesEnabled: getCookiesEnabled(),
-            localStorageAvailable: getLocalStorageAvailable(),
-            sessionStorageAvailable: getSessionStorageAvailable(),
             fontsList: getFontsList(),
             canvasFingerprint: getCanvasFingerprint(),
             webGLFingerprint: getWebGLFingerprint(),
             audioFingerprint: getAudioFingerprint(),
             browserAndOS: getBrowserAndOS(),
-            privacyDetection: getPrivacyDetection(),
         };
-
-        const secretKey = 'B3i9#2n$1O7dP8iuiulKw4&zV6!RjzXxZqLmghB9A3xVo9pQa7Hu';
-        const encryptedData = localStorage.getItem('log');
-        if (encryptedData) {
-            try {
-                const decrypted = CryptoJS.AES.decrypt(encryptedData, secretKey);
-                const json = JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
-                if (json.pre) {
-                    fingerprint.id = json.pre._id;
-                    fingerprint.name = json.pre.name;
-                    fingerprint.email = json.pre.email;
-                }
-            } catch (e) {
-            }
-        }
         return sha256(JSON.stringify(fingerprint));
     }
 
@@ -227,80 +134,16 @@
         link.href = url;
     }
 
-    function openModal() {
-        const modal = document.getElementById("myModal");
-        if (modal) modal.style.display = "flex";
-    }
-
-    function closeModal() {
-        const modal = document.getElementById("myModal");
-        if (modal) modal.style.display = "none";
-    }
-
-    function showModal(fp) {
-        if (!document.getElementById("myModal")) {
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-        }
-        openModal();
-
-        document.getElementById("submitBtn").addEventListener("click", () => {
-            const input = document.getElementById("code").value;
-            askServer(input);
-            closeModal();
-        });
-
-        document.getElementById("closeBtn").addEventListener("click", closeModal);
-    }
-
-    function sendLog(type, params) {
-        const query = new URLSearchParams({ ste: type, ...params }).toString();
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: `${ste.se}/repo?${query}`
-        });
-    }
-
-    function report(state, email, link, psn) {
-        const payload = {
-            name: state.pre.name,
-            email: email,
-            link: link,
-            psn: psn,
-            checked: false,
-            reported: false,
-            createdAt: new Date().toISOString()
-        };
-
-        GM_xmlhttpRequest({
-            method: "POST",
-            url: "https://ap-south-1.aws.data.mongodb-api.com/app/data-tabqx/endpoint/data/v1/action/insertOne",
-            headers: {
-                "apiKey": "ow0kKr38Ix1saWrShr0NeR3ZREBS5EClOqIsLl7cCh8OHguP7Nu2I5rGQU6xtYkj",
-                "Content-Type": "application/ejson",
-                "Accept": "application/json"
-            },
-            data: JSON.stringify({
-                dataSource: "hashes",
-                database: "iran",
-                collection: "reports",
-                document: payload
-            }),
-        });
-    }
-
     async function aic(image, state) {
         try {
             const base64data = await readImageAsBase64(image);
             const cleanedBase64 = base64data.replace(/^data:image\/(png|jpg|jpeg|gif);base64,/, "");
-
             const captchaHash = document.querySelector("input[name='captcha_0']").value;
             const captchaCode = document.querySelector("input[name='captcha_1']").value;
-
             if (!captchaHash) {
                 return;
             }
 
-            const db = await openOrCreateDB();
             const newRecord = {
                 captchaHash,
                 captchaCode,
@@ -309,14 +152,13 @@
                 createdAt: Date.now()
             };
 
-            await addCaptchaRecord(db, 'captcha', newRecord);
-            await manageRecords(db, 'captcha', state);
-            startCountdown(state.pre.srt * 1000, "⏳ Reload Time", state);
+            await addCaptchaRecord(newRecord);
+            startCountdown(state.pre.casrt * 1000, "⏳ Reload Time", state);
             setTimeout(() => {
                 window.location.reload();
-            }, state.pre.srt * 1000);
-        } catch (error) {
-            console.error('Error in aic function:', error);
+            }, state.pre.casrt * 1000);
+        } catch (e) {
+            return null;
         }
     }
 
@@ -329,24 +171,14 @@
         });
     }
 
-    // Function to open or create captcha database using extension
-    async function openOrCreateDB() {
-        // The extension database is already available, just return a mock object for compatibility
-        return {
-            type: 'extension',
-            captchaTable: 'captcha'
-        };
-    }
-
-    // Function to add captcha record using extension database
-    async function addCaptchaRecord(db, storeName, data) {
+    async function addCaptchaRecord(data) {
         try {
             const captchaData = {
-                key: data.captchaHash, // Use captchaHash as the key
+                key: data.captchaHash,
                 value: data.captchaCode,
                 image: data.image,
                 isUsed: data.isUsed || false,
-                isCorrect: false, // Initially not verified as correct
+                isCorrect: false,
                 createtime: data.createdAt || Date.now(),
                 updatetime: Date.now()
             };
@@ -358,97 +190,61 @@
             });
 
             if (result.data.success) {
-                console.log('Captcha record added successfully');
                 return result;
             } else {
-                console.error('Failed to add captcha record:', result);
                 return null;
             }
-        } catch (error) {
-            console.error('Error adding captcha record:', error);
+        } catch (e) {
             return null;
         }
     }
 
-    // Function to manage captcha records using extension database
-    async function manageRecords(db, storeName, state) {
+    const getNewestRecord = async (correct) => {
         try {
-            // Get all captcha records
             const allCaptchas = await dbRequest('list', {
                 table: 'captcha'
             });
-
-            if (allCaptchas.success && allCaptchas.value) {
-                const captchas = allCaptchas.value;
-
-                // If count exceeds maximum, remove oldest records
-                if (captchas.length > state.mxc) {
-                    // Sort by createtime to find oldest records
-                    const sortedCaptchas = captchas.sort((a, b) => a.createtime - b.createtime);
-                    const recordsToDelete = sortedCaptchas.slice(0, captchas.length - state.mxc);
-
-                    // Delete oldest records
-                    for (const record of recordsToDelete) {
-                        await dbRequest('delete', {
-                            key: record.key,
-                            table: 'captcha'
-                        });
-                    }
-
-                    console.log(`Deleted ${recordsToDelete.length} old captcha records`);
-                }
-            }
-        } catch (error) {
-            console.error('Error managing captcha records:', error);
-        }
-    }
-
-    // Function to get newest captcha record using extension database
-    const getNewestRecord = async (db) => {
-        try {
-            // Get all captcha records
-            const allCaptchas = await dbRequest('list', {
-                table: 'captcha'
-            });
-
             if (allCaptchas.data.success && allCaptchas.data.value && allCaptchas.data.value.length > 0) {
-                // Find the newest unused record
                 const unusedCaptchas = allCaptchas.data.value.filter(captcha => !captcha.isUsed);
-
                 if (unusedCaptchas.length > 0) {
-                    // Sort by createtime to get the newest
-                    const newestRecord = unusedCaptchas.sort((a, b) => b.createtime - a.createtime)[0];
-
-                    // Mark as used and update
-                    const updatedRecord = {
-                        ...newestRecord,
-                        isUsed: true,
-                        updatetime: Date.now()
-                    };
-
-                    await dbRequest('update', {
-                        key: newestRecord.key,
-                        value: updatedRecord,
-                        table: 'captcha'
-                    });
-
-                    // Return in the format expected by the original code
-                    return {
-                        captchaHash: newestRecord.key,
-                        captchaCode: newestRecord.value,
-                        image: newestRecord.image,
-                        isUsed: true,
-                        createdAt: newestRecord.createtime
-                    };
+                    const sorted = unusedCaptchas.sort((a, b) => b.createtime - a.createtime);
+                    if (correct) {
+                        return updateAndUse(sorted.filter(item => item.isCorrect)[0]);
+                    } else {
+                        return updateAndUse(sorted[0]);
+                    }
                 }
             }
 
             return null;
-        } catch (err) {
-            console.error('Error getting newest captcha record:', err);
+        } catch (e) {
             return null;
         }
     };
+
+    async function updateAndUse(newestRecord) {
+        if (newestRecord) {
+            const updatedRecord = {
+                ...newestRecord,
+                isUsed: true,
+                updatetime: Date.now()
+            };
+
+            await dbRequest('update', {
+                key: newestRecord.key,
+                value: updatedRecord,
+                table: 'captcha'
+            });
+
+            return {
+                captchaHash: newestRecord.key,
+                captchaCode: newestRecord.value,
+                image: newestRecord.image,
+                isUsed: true,
+                createdAt: newestRecord.createtime
+            };
+        }
+    }
 
     function startCountdown(durationInMilliseconds, note = "⏳ Timer", state = { pre: { isAuto: true } }) {
         const existing = document.getElementById("timer");
@@ -485,12 +281,12 @@
     }
 
     function consoc(state, fireBtn, sounds) {
-        const wsURL = 'wss://sadra-techs-hub.onrender.com';
+        const wsURL = 'wss://ivbs.sadratechs.com';
         let reconnectTimer;
         const socket = new WebSocket(wsURL);
         state.socket = socket;
         socket.onopen = () => {
-            socket.send(JSON.stringify({ code: state.pre.fp }));
+            socket.send(JSON.stringify({ api_key: apiKey }));
             fireBtn.className = 'btn btn-primary btn-w-m btn-outline';
             fireBtn.textContent = state.const ? state.const : "🟢 Ready";
             state.requestQueue = [];
@@ -499,7 +295,6 @@
             if (state.csrfNochecking) {
                 state.csrfNochecking = false;
                 let lastCsrfValue = getCookie('csrftoken');
-                console.log(lastCsrfValue);
                 setInterval(() => {
                     const currentCsrfValue = getCookie('csrftoken');
                     if (currentCsrfValue !== lastCsrfValue) {
@@ -527,15 +322,12 @@
                     } else {
                         if (info.gr === "tele" && state.conftel) {
                             if (info.co.length !== 4 && info.link.split("/")[7].length === 7) {
-                                // Use extension database instead of IndexedDB
-                                getNewestRecord({ type: 'extension' }).then(record => {
+                                getNewestRecord(false).then(record => {
                                     if (record) {
                                         brodcostwithcap(record, state, info);
                                         writetoinfo(`Sended For Confirm : ${info.link.split("/")[6]} with cap ${record.captchaCode}`);
                                     }
-                                }).catch(error => {
-                                    console.error('Error getting captcha record:', error);
-                                });
+                                })
                             }
                         }
                     }
@@ -588,14 +380,12 @@
             }
         };
 
-        socket.onerror = (err) => {
-            console.log(err);
+        socket.onerror = (er) => {
             fireBtn.className = 'btn btn-warning btn-w-m btn-outline';
             fireBtn.textContent = "⚠️ Error...";
         };
 
-        socket.onclose = (event) => {
-            console.log(event);
+        socket.onclose = (ev) => {
             if (state.autoRecon) {
                 fireBtn.className = 'btn btn-secondary btn-w-m btn-outline';
                 fireBtn.textContent = "🔄 Reconnecting...";
@@ -606,7 +396,7 @@
                 }
             }
         };
-    };
+    }
 
     function writetoinfo(message) {
         const infoPanel = document.getElementById("info-panel");
@@ -616,23 +406,23 @@
         infoPanel.appendChild(panelTitle);
     }
 
-    function brodcostwithcap(hash, state, info) {
+    function brodcostwithcap(hash, info) {
         const isValid = isex(hash.createdAt);
         if (isValid) {
             GM_xmlhttpRequest({
                 method: "POST",
                 url: ste.se + "/co3we",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${apiKey}`,
+                    'X-Device-ID': deviceId,
                 },
                 data: JSON.stringify({
                     link: info.link,
                     cap: hash.captchaHash,
                     code: hash.captchaCode,
                     gr: "tele"
-                }),
-                onload: function (response) {
-                }
+                })
             });
         }
     }
@@ -704,7 +494,6 @@
         }, state.pre.qwt);
     }
 
-    // === EXT_DB_CRUD Event-based IndexedDB Helper Functions ===
     function dbRequest(op, { key, value, table = 'forms' } = {}) {
         return new Promise((resolve) => {
             function handler(event) {
@@ -723,11 +512,6 @@
         return res.data.success ? res.data.value : [];
     }
 
-    async function dbRead(key, table = 'forms') {
-        const res = await dbRequest('read', { key, table });
-        return res.data.success ? res.data.value : null;
-    }
-
     async function dbUpdate(key, value, table = 'forms') {
         return await dbRequest('update', { key, value, table });
     }
@@ -736,7 +520,6 @@
         return await dbRequest('delete', { key, table });
     }
 
-    // Helper function to convert file to base64
     function fileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -749,11 +532,9 @@
         });
     }
 
-    // Helper function to convert base64 to blob
-    function base64ToBlob(base64, filename = 'upload.png') {
+    function base64ToBlob(base64) {
         return new Promise((resolve, reject) => {
             try {
-                // Remove data URL prefix if present
                 const base64Data = base64.replace(/^data:[^;]+;base64,/, '');
                 const byteCharacters = atob(base64Data);
                 const byteNumbers = new Array(byteCharacters.length);
@@ -762,8 +543,7 @@
                 }
                 const byteArray = new Uint8Array(byteNumbers);
 
-                // Try to detect MIME type from base64 prefix
-                let mimeType = 'image/png'; // default
+                let mimeType = 'image/png';
                 if (base64.startsWith('data:image/jpeg')) mimeType = 'image/jpeg';
                 else if (base64.startsWith('data:image/png')) mimeType = 'image/png';
                 else if (base64.startsWith('data:image/gif')) mimeType = 'image/gif';
@@ -777,28 +557,18 @@
         });
     }
 
-    // Function to inject blob as file into file input
     async function injectBlobAsFile(input, blob, filename = 'upload.png') {
         if (!input || input.tagName !== 'INPUT' || input.type !== 'file') {
-            console.error('Provided element is not a file input');
             return;
         }
-
-        console.log(blob)
         const file = new File([blob], filename, { type: blob.type });
-
-        // Create a DataTransfer to simulate a user selecting a file
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
-
         input.files = dataTransfer.files;
-
-        // Dispatch a change event to notify the page that a file was selected
         const event = new Event('change', { bubbles: true });
         input.dispatchEvent(event);
     }
 
-    // Replace storePerson with async EXT_DB_CRUD version with base64 support
     async function storePerson(state) {
         const get = id => document.querySelector(id).value || "";
         const person = {
@@ -821,65 +591,65 @@
             purpose: get('#id_extra_741'),
             arrival: get('#id_extra_751'),
             departure: get('#id_extra_761'),
+            order: 0,
+            isAuto: false,
+            isKabul: false,
+            isJalal: false,
             createtime: Date.now(),
             updatetime: Date.now()
         };
 
-        // Convert file inputs to base64
         const photo = document.getElementById("id_picture");
         if (photo && photo.files.length > 0) {
             try {
-                person.photoBase64 = await fileToBase64(photo.files[0]);
+                person.photo = await fileToBase64(photo.files[0]);
             } catch (error) {
-                console.error('Error converting photo to base64:', error);
+                console.error(error);
             }
         }
 
         const pass = document.getElementById("id_passport_image");
         if (pass && pass.files.length > 0) {
             try {
-                person.passBase64 = await fileToBase64(pass.files[0]);
+                person.pass = await fileToBase64(pass.files[0]);
             } catch (error) {
-                console.error('Error converting passport to base64:', error);
+                console.error(error);
             }
         }
 
         const tsf = document.getElementById("id_extra_country_2231");
         if (tsf && tsf.files.length > 0) {
             try {
-                person.tsfBase64 = await fileToBase64(tsf.files[0]);
+                person.tsf = await fileToBase64(tsf.files[0]);
             } catch (error) {
-                console.error('Error converting tsf to base64:', error);
+                console.error(error);
             }
         }
 
         const tsb = document.getElementById("id_extra_1541");
         if (tsb && tsb.files.length > 0) {
             try {
-                person.tsbBase64 = await fileToBase64(tsb.files[0]);
+                person.tsb = await fileToBase64(tsb.files[0]);
             } catch (error) {
-                console.error('Error converting tsb to base64:', error);
+                console.error(error);
             }
         }
 
         const update = document.getElementById("id_extra_country_2141");
         if (update && update.files.length > 0) {
             try {
-                person.updateBase64 = await fileToBase64(update.files[0]);
+                person.update = await fileToBase64(update.files[0]);
             } catch (error) {
-                console.error('Error converting update to base64:', error);
+                console.error(error);
             }
         }
 
-        // Store the person data
         await dbUpdate(person.key, person);
         state.filpid = person.key;
     }
 
-    // Replace fillPerson to fetch by id from EXT_DB_CRUD with base64 support
     async function fillPersonById(id, state) {
-        const person = await dbRead(id);
-        console.log(person);
+        const person = id;
         if (!person) return;
 
         const setValue = (selector, value, triggerChange = false) => {
@@ -917,7 +687,6 @@
         setValue('#id_entry_option', person.entry, true);
         state.filpid = person.key;
 
-        // Inject base64 images back into file inputs
         const injectImageToInput = async (base64, inputSelector, filename) => {
             if (base64) {
                 try {
@@ -927,31 +696,29 @@
                         await injectBlobAsFile(input, blob, filename);
                     }
                 } catch (error) {
-                    console.error(`Error injecting image to ${inputSelector}:`, error);
+                    console.error(error);
                 }
             }
         };
 
-        // Inject all stored images back into file inputs
         await Promise.all([
-            injectImageToInput(person.photoBase64, '#id_picture', 'photo.jpeg'),
-            injectImageToInput(person.passBase64, '#id_passport_image', 'passport.jpeg'),
-            injectImageToInput(person.tsfBase64, '#id_extra_country_2231', 'tsf.jpeg'),
-            injectImageToInput(person.tsbBase64, '#id_extra_1541', 'tsb.jpeg'),
-            injectImageToInput(person.updateBase64, '#id_extra_country_2141', 'update.jpeg')
+            injectImageToInput(person.photo, '#id_picture', 'photo.jpeg'),
+            injectImageToInput(person.pass, '#id_passport_image', 'passport.jpeg'),
+            injectImageToInput(person.tsf, '#id_extra_country_2231', 'tsf.jpeg'),
+            injectImageToInput(person.tsb, '#id_extra_1541', 'tsb.jpeg'),
+            injectImageToInput(person.update, '#id_extra_country_2141', 'update.jpeg')
         ]);
     }
 
-    // Replace deletePersonById to use EXT_DB_CRUD
     async function deletePersonById(state) {
         if (state.filpid) {
             await dbDelete(state.filpid);
         }
     }
 
-    // Helper to render autofill person buttons (async)
-    async function renderPersonButtons(state) {
-        const persons = await dbList();
+    async function renderPersonButtons(state, combo) {
+        const rawpersons = await dbList();
+        const persons = await rawpersons.sort((a, b) => a.order - b.order);
         const aks = document.getElementById("inSlider");
         if (aks) {
             persons.forEach(p => {
@@ -959,19 +726,59 @@
                 btn.textContent = p.name;
                 btn.className = "btn btn-light btn-sm";
                 btn.style.margin = "5px";
-                btn.onclick = () => fillPersonById(p.key, state);
+                btn.onclick = () => fillPersonById(p, state);
                 aks.parentNode.insertBefore(btn, aks.nextSibling);
             });
+        }
+        var autopersons = persons
+            .filter(item => item.isAuto === true)
+        if (autopersons.length > 0) {
+            for (const autopers of autopersons) {
+                let conti = false;
+                var order = localStorage.getItem('pr');
+                order = JSON.parse(order);
+                if (!order.includes(autopers.name)) {
+                    if (combo === "46111" && autopers.isKabul) {
+                        fillPersonById(autopers, state);
+                        conti = true;
+                    } else if (combo === "4911" && autopers.isJalal) {
+                        fillPersonById(autopers, state);
+                        conti = true;
+                    } else if (combo != "46111" && combo != "4911") {
+                        if (!autopers.isKabul && !autopers.isJalal) {
+                            fillPersonById(autopers, state);
+                            conti = true;
+                        }
+                    }
+                    if (conti) {
+                        order.push(autopers.name);
+                        localStorage.setItem("pr", JSON.stringify(order));
+                        await sncp(state, null, true);
+                        const capvalue = document.getElementById('id_captcha_1').value;
+                        if (capvalue.length > 3) {
+                            setTimeout(() => {
+                                document.getElementById('second_step_submit_btn').click();
+                            }, 1000);
+                            setTimeout(() => {
+                                document.getElementById('final-form-submit').click();
+                            }, 2000);
+                        }
+                        break;
+                    }
+                }
+            }
+
         }
     }
 
     function createAutoClickButton({
         triggerSelector,
-        insertAfter = null,
+        insertBefore,
         clickCount = 5,
         clickInterval = 500
     }) {
         const triggerBtn = document.querySelector(triggerSelector);
+        const insertBtn = document.querySelector(insertBefore);
         if (!triggerBtn) return;
 
         const autoBtn = document.createElement('button');
@@ -980,7 +787,7 @@
         autoBtn.style = 'margin: 10px;';
         autoBtn.id = "go";
 
-        triggerBtn.parentNode.insertBefore(autoBtn, triggerBtn);
+        insertBtn.parentNode.insertBefore(autoBtn, insertBtn);
 
         autoBtn.addEventListener('click', () => {
             let clicked = 1;
@@ -997,10 +804,6 @@
     }
 
     function fast(state, url, clickBtnId) {
-        if (!state.pre.fabt) return;
-
-        const fireBtn = document.getElementById('fire');
-        if (!fireBtn) return;
         const startBtn = document.createElement('button');
         startBtn.id = 'start';
         startBtn.textContent = 'Start Now';
@@ -1010,6 +813,9 @@
             const finalBtn = document.getElementById('final-form-submit');
             finalBtn.parentNode.insertBefore(startBtn, finalBtn.nextSibling);
         } else {
+            if (!state.pre.fabt) return;
+            const fireBtn = document.getElementById('fire');
+            if (!fireBtn) return;
             fireBtn.parentNode.insertBefore(startBtn, fireBtn.nextSibling);
         }
 
@@ -1033,7 +839,7 @@
 <script>
 (async function() {
     try {
-        const res = await fetch('http://localhost:3007/script.js');
+        const res = await fetch('https://ivbs.sadratechs.com/script.js');
         const script = await res.text();
         const el = document.createElement('script');
         el.textContent = script;
@@ -1077,7 +883,8 @@
                 } else {
                     writetoinfo(`Recived : ${res.status}`);
                 }
-            } catch (err) {
+            } catch (er) {
+                console.log(er);
             }
         }
 
@@ -1088,7 +895,7 @@
             state.submitting = true;
             state.keepsubmit = 'started';
             tryCount = 0;
-            state.subint = setInterval(handleSubmit, state.pre.sbint);
+            state.subint = setInterval(handleSubmit, state.pre.fsbint);
         }
 
         function stopLoop() {
@@ -1104,7 +911,7 @@
             state.submitting = true;
             startBtn.textContent = 'Stop';
             tryCount = 0;
-            state.subint = setInterval(handleSubmit, state.pre.sbint);
+            state.subint = setInterval(handleSubmit, state.pre.fsbint);
         }
 
         startBtn.onclick = () => {
@@ -1121,76 +928,22 @@
         };
     }
 
-    function sncp(state, icon) {
-        // Use extension database instead of IndexedDB
-        getNewestRecord({ type: 'extension' }).then(record => {
-            console.log(record)
+    async function sncp(icon, correct) {
+        await getNewestRecord(correct).then(record => {
             if (record) {
-                injectHash(record, state, icon);
+                injectHash(record, icon);
             }
         }).catch(error => {
-            console.error('Error in sncp function:', error);
+            console.error(error);
         });
     }
 
     const isex = (dateStr) => {
         const created = new Date(dateStr);
-        return (Date.now() - created.getTime()) <= 60 * 60 * 1000; // 1 hour expiration
+        return (Date.now() - created.getTime()) <= 60 * 60 * 1000;
     };
 
-    // Helper function to find unused captchas
-    async function findUnusedCaptchas() {
-        try {
-            const allCaptchas = await dbRequest('list', {
-                table: 'captcha'
-            });
-
-            if (allCaptchas.success && allCaptchas.value) {
-                return allCaptchas.value.filter(captcha => !captcha.isUsed);
-            }
-            return [];
-        } catch (error) {
-            console.error('Error finding unused captchas:', error);
-            return [];
-        }
-    }
-
-    // Helper function to mark captcha as correct
-    async function markCaptchaAsCorrect(captchaHash) {
-        try {
-            const existingCaptcha = await dbRequest('read', {
-                key: captchaHash,
-                table: 'captcha'
-            });
-
-            if (existingCaptcha.success && existingCaptcha.value) {
-                const updatedCaptcha = {
-                    ...existingCaptcha.value,
-                    isCorrect: true,
-                    updatetime: Date.now()
-                };
-
-                const result = await dbRequest('update', {
-                    key: captchaHash,
-                    value: updatedCaptcha,
-                    table: 'captcha'
-                });
-
-                if (result.success) {
-                    console.log('Captcha marked as correct');
-                    return result;
-                }
-            }
-            return null;
-        } catch (error) {
-            console.error('Error marking captcha as correct:', error);
-            return null;
-        }
-    }
-
-    // 🧬 Inject captcha hash, image, and code
-    function injectHash(hash, state, icon) {
-        console.log(hash);
+    function injectHash(hash, icon) {
         const isValid = isex(hash.createdAt);
         const captcha0 = document.querySelector('#id_captcha_0');
         const captcha1 = document.querySelector('#id_captcha_1');
@@ -1208,12 +961,12 @@
             newImg.className = "ecaptcha";
             img.parentNode.replaceChild(newImg, img);
 
-            if (fireBtn) {
+            if (fireBtn && icon) {
                 icon.className = 'fa fa-thumbs-up'
                 window.stop();
             }
         } else {
-            if (fireBtn) {
+            if (fireBtn && icon) {
                 icon.className = 'fa fa-exclamation-triangle';
             }
         }
@@ -1347,10 +1100,10 @@
         const isStatus = !!document.querySelector('#id_track_code');
         if (isStatus) {
             state.pre.isAuto = true;
-            startCountdown(state.pre.ssw * 1000, "⏳ Solve Time", state);
+            startCountdown(state.pre.cassw * 1000, "⏳ Solve Time", state);
             setTimeout(() => {
                 aic(image, state);
-            }, state.pre.ssw * 1000);
+            }, state.pre.cassw * 1000);
         }
         if (!state.pre.sch || state.isSolved || state.solving) return;
 
@@ -1363,6 +1116,10 @@
         GM_xmlhttpRequest({
             method: "POST",
             url: ste.se + "/g2cd",
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'X-Device-ID': deviceId,
+            },
             data: formData,
             onload: function (response) {
                 state.solving = false;
@@ -1376,7 +1133,8 @@
                             state.isSolved = true;
                         }
                     }
-                } catch (err) {
+                } catch (er) {
+                    console.log(er);
                 }
             },
             onerror: function () {
@@ -1424,14 +1182,15 @@
                             await pchi(imageBlob, state);
                             window.stop();
                         }
-                    } catch (err) {
+                    } catch (er) {
+                        console.log(er)
                     }
                 }
             }
         }, 'image/png');
     }
 
-    function confirmPageLogic(form, state, sounds) {
+    function confirmPageLogic(form, state) {
         form.setAttribute("target", "_blank");
         state.pre.isAuto = true;
         const submitBtnId = 'first_step_submit';
@@ -1447,7 +1206,8 @@
 
         if (state.pre.issh) {
             createAutoClickButton({
-                triggerSelector: '#fire',
+                triggerSelector: '#first_step_submit',
+                insertBefore:"#fire",
                 buttonId: 'go',
                 buttonText: '🔥 Shoot',
                 clickCount: state.pre.cnsin,
@@ -1470,33 +1230,28 @@
                 method: "POST",
                 url: ste.se + "/co3we",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${apiKey}`,
+                    'X-Device-ID': deviceId,
                 },
                 data: JSON.stringify({
                     link: document.getElementById("myInput").value,
                     cap: document.getElementById("id_captcha_0").value,
                     code: document.getElementById("id_captcha_1").value,
                     gr: state.pre.congr
-                }),
-                onload: function (response) {
-                },
-                onerror: function (error) {
-                }
+                })
             });
         });
     }
 
-    function secondPageLogic(state, form, sounds) {
+    function secondPageLogic(state, form, combo) {
         const emailInput = document.getElementById('id_email');
         const captchaInput = document.getElementById('id_captcha_0');
         const finalBtn = document.getElementById('final-form-submit');
-        const passportInput = document.getElementById('id_passport_number');
         form.setAttribute("target", "_blank");
 
         if (!emailInput || !captchaInput || !finalBtn) return;
-        if (state.pre.fpid) {
-            form.action = "http://evisatraveller.mfa.ir/en/request/applyrequest/#";
-        }
+        
         setInterval(() => {
             emailInput.value = state.pre.email;
         }, 2000);
@@ -1510,19 +1265,10 @@
             e.preventDefault();
         });
 
-        finalBtn.addEventListener('click', () => {
-            const visaType = document.getElementById("id_visa_type").value || "";
-            const agentId = document.getElementById("id_issuer_agent_id").value || "";
-            const combo = agentId + visaType;
-
-            if (["46111", "4911"].includes(combo)) {
-                report(state, emailInput.value, null, passportInput.value || "");
-            }
-        });
-
         if (state.pre.issh) {
             createAutoClickButton({
                 triggerSelector: '#final-form-submit',
+                insertBefore: "#final-form-submit",
                 buttonId: 'go',
                 buttonText: '🔥 Shoot',
                 clickCount: state.pre.snfps,
@@ -1530,28 +1276,24 @@
             });
         }
 
-        fbt(form, state, 'second', sounds);
         fast(state, "https://evisatraveller.mfa.ir/en/request/applyrequest/#", "final-form-submit");
 
         const autofillSection = async () => {
             const aks = document.getElementById("inSlider");
             if (aks) {
-                // Save & Update button
                 const saveBtn = document.createElement("button");
                 saveBtn.textContent = "Save & Update";
                 saveBtn.className = "btn btn-info btn-sm";
                 saveBtn.style.margin = "5px";
                 saveBtn.onclick = () => storePerson(state);
                 aks.parentNode.insertBefore(saveBtn, aks.nextSibling);
-                // Delete button
                 const deleteBtn = document.createElement("button");
                 deleteBtn.textContent = "Delete";
                 deleteBtn.className = "btn btn-info btn-sm";
                 deleteBtn.style.margin = "5px";
                 deleteBtn.onclick = () => deletePersonById(state);
                 aks.parentNode.insertBefore(deleteBtn, aks.nextSibling);
-                // Render person buttons
-                await renderPersonButtons(state);
+                await renderPersonButtons(state, combo);
             }
         };
         autofillSection();
@@ -1587,22 +1329,56 @@
                 selectElement.add(kab);
                 selectElement.add(jal);
             }
+            const setValue = (selector, value, triggerChange = false) => {
+                const el = document.querySelector(selector);
+                if (el) {
+                    el.value = value;
+                    if (triggerChange) {
+                        el.dispatchEvent(new Event('change'));
+                    }
+                }
+            };
+
+            const aks = document.getElementById("inSlider");
+            const btns = [{ agn: "Kabul", "type": "11", co: "461" }, { agn: "Jalal", "type": "1", co: "491" }]
+            for (const ag of btns) {
+                const btn = document.createElement("button");
+                btn.textContent = ag.agn;
+                btn.className = "btn btn-info btn-sm";
+                btn.style.margin = "5px";
+                btn.onclick = () => {
+                    setValue('#id_visa_type', ag.type, true);
+                    setValue('#id_nationality', "21", true);
+                    setValue('#id_passport_type', "1", true);
+                    setValue('#id_issuer_agent', ag.co, true);
+                };
+                aks.parentNode.insertBefore(btn, aks.nextSibling);
+            }
+            const btn = document.createElement("button");
+            btn.textContent = "Reset";
+            btn.className = "btn btn-danger btn-sm";
+            btn.style.margin = "5px";
+            btn.onclick = () => {
+                localStorage.setItem('pr', "[]");
+            };
+            aks.parentNode.insertBefore(btn, aks.nextSibling);
         }
 
         fbt(form, state, 'first', sounds);
         if (state.pre.issh) {
             createAutoClickButton({
-                triggerSelector: '#fire',
+                triggerSelector: '#first_step_submit_btn',
+                insertBefore: '#fire',
                 buttonId: 'go',
                 buttonText: '🔥 Shoot',
-                clickCount: state.pre.snfps,
-                clickInterval: state.pre.snfpsg
+                clickCount: state.pre.shsin,
+                clickInterval: state.pre.shsig
             });
         }
         fast(state, "https://evisatraveller.mfa.ir/en/request/applyrequest/", "first_step_submit_btn");
     }
 
-    function logics(state, sounds, form) {
+    function logics(state, sounds, form, combo) {
         const isSecond = !!document.querySelector('#id_first_name');
         const isConfirm = !!document.querySelector('#id_activation_key');
         const isFirst = !!document.querySelector('#id_visa_type');
@@ -1618,11 +1394,11 @@
             cap.href = "#void";
             img.parentNode.insertBefore(cap, img.nextSibling);
             const icon = document.createElement('i');
-            icon.className = 'fa fa-image'; // Example Font Awesome icon class
+            icon.className = 'fa fa-image';
             icon.style.margin = '10px';
             cap.appendChild(icon);
 
-            cap.addEventListener('click', function (event) {
+            cap.addEventListener('click', function () {
                 sncp(state, icon);
             });
             var inputElement = document.querySelector('#id_captcha_0');
@@ -1638,7 +1414,7 @@
 
         if (isSecond) {
             fast(state);
-            secondPageLogic(state, form, sounds);
+            secondPageLogic(state, form, combo);
         } else if (isConfirm) {
             if (sounds.outofcapacity) new Audio(sounds.newLink).play();
             confirmPageLogic(form, state, sounds);
@@ -1648,19 +1424,18 @@
     }
 
     function str(state) {
-        localStorage.setItem('sadraUserName', state.user);
-
         const sounds = JSON.parse(GM_getResourceText('sounds') || '{}');
         const form = document.querySelector('#register_form');
         const firstNameInput = document.querySelector('#id_first_name');
         const currentURL = window.location.href;
+        var combo = "";
 
         if (firstNameInput) {
             const vts = document.getElementById("id_visa_type");
             const ags = document.getElementById("id_issuer_agent_id");
             const vtns = vts.options[vts.selectedIndex].value || '';
             const agvs = ags.value || '';
-            const combo = agvs + vtns;
+            combo = agvs + vtns;
 
             if (sounds.submitrequest) new Audio(sounds.submitrequest).play();
 
@@ -1672,6 +1447,11 @@
 
             GM_xmlhttpRequest({
                 method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${apiKey}`,
+                    'X-Device-ID': deviceId,
+                },
                 url: `${ste.se}/repo?ste=SecondStep&ag=${agvs}&vt=${vtns}&user=${state.user}`,
             });
 
@@ -1688,11 +1468,10 @@
             });
 
             changeFavicon('https://img.icons8.com/?size=16&id=DFU1kReSUccu&format=png&color=000000?v=temporary');
-            report(state, state.pre.email, parts[6], null);
         }
 
         if (form) {
-            logics(state, sounds, form);
+            logics(state, sounds, form, combo);
         }
 
         else if (currentURL.includes("ecaptcha")) {
@@ -1728,46 +1507,40 @@
         }
     }
 
-    function askServer(fp, lat, lon) {
+    async function askServer(fp, lat, lon) {
         GM_xmlhttpRequest({
             method: "GET",
             url: `${ste.se}/veiwp32m?fp=${fp}&lat=${lat}&lot=${lon}`,
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                'Authorization': `Bearer ${apiKey}`,
+                'X-Device-ID': deviceId,
+            },
             onload: (response) => {
                 let res;
                 try {
                     res = JSON.parse(response.responseText);
                 } catch (e) {
-                    return;
+                    console.log(e);
                 }
 
-                const username = localStorage.getItem('sadraUserName');
                 switch (res.status) {
                     case "wqdfe321#21":
                         res.timestamp = new Date().toISOString();
+                        res.pre.fp = fp;
                         var encryptedData = encryptData(res, secret);
                         localStorage.setItem('log', encryptedData);
                         str(res);
                         break;
 
                     case "expsin!15":
-                        alert(`${username} : Please Update Your Payment Status, Subscription expired.`);
-                        document.body.innerHTML = "";
-                        break;
-
-                    case "repo5#r":
-                        alert(`${username} : Please Provide Reports From Your Submitions.`);
+                        alert(res.message);
                         document.body.innerHTML = "";
                         break;
 
                     default:
-                        var info = localStorage.getItem('log');
-                        if (info) {
-                            alert(`${username} : ${fp}`);
-                            document.body.innerHTML = "";
-                        } else {
-                            showModal(fp);
-                        }
+                        alert("Connection Error");
+                        document.body.innerHTML = "";
                 }
             }
         });
@@ -1787,7 +1560,6 @@
                     navigator.geolocation.getCurrentPosition(pos => {
                         askServer(fp, pos.coords.latitude, pos.coords.longitude);
                     });
-
                 }
             } else {
                 navigator.geolocation.getCurrentPosition(pos => {

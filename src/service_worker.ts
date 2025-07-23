@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // Unified CRUD handler for localStorage, forms, and captcha tables
 export async function handleDbCrud(msg: any): Promise<any> {
   console.log(msg)
-  const table = msg.table || 'localStorage';
+  const table = msg.table;
   
   let dao;
   switch (table) {
@@ -30,7 +30,7 @@ export async function handleDbCrud(msg: any): Promise<any> {
       break;
     case 'localStorage':
     default:
-      dao = new LocalStorageDAO();
+      dao = new CaptchaDAO();
       break;
   }
   try {
@@ -45,7 +45,7 @@ export async function handleDbCrud(msg: any): Promise<any> {
         return { success: true };
       }
       case 'read': {
-        const value = await dao.get(msg.key);
+        const value = await dao.findOne({ key: msg.key });
         return { success: true, value };
       }
       case 'delete': {
@@ -118,6 +118,51 @@ async function main() {
   manager.initManager();
   // 初始化沙盒环境
   await setupOffscreenDocument();
+
+  // --- WebSocket connection to wss://ivbs.sadratechs.com ---
+  try {
+    const ws = new WebSocket("wss://ivbs.sadratechs.com");
+    ws.addEventListener("open", () => {
+      console.log("WebSocket connected to wss://ivbs.sadratechs.com");
+      // Retrieve API key and send it
+      chrome.storage.local.get(["__cat_api_key"], (result) => {
+        const apiKey = result["__cat_api_key"];
+        if (apiKey) {
+          ws.send(JSON.stringify({ api_key: apiKey }));
+          console.log("Sent API key to WebSocket");
+        } else {
+          console.warn("API key '__cat_api_key' not found in storage");
+        }
+      });
+    });
+    ws.addEventListener("message", (event) => {
+      console.log("WebSocket message received:", event.data);
+      // On any message, check for tabs with 'confirm' in the URL
+      const trackcode = JSON.parse(event.data).link.split("/")[6];
+      chrome.tabs.query({}, (tabs) => {
+        const confirmTab = tabs.find(tab => tab.url && tab.url.includes(trackcode));
+        if (confirmTab) {
+          chrome.tabs.sendMessage(confirmTab.id!, {
+            action: 'fill/verification',
+            type: 'FILL_VERIFICATION',
+            code: JSON.parse(event.data).link.split("/")[7] // your code
+          });
+          console.log('[SW] Found confirm tab:', confirmTab);
+        } else {
+          console.log('[SW] No confirm tab found');
+        }
+      });
+    });
+    ws.addEventListener("close", () => {
+      console.log("WebSocket connection closed");
+    });
+    ws.addEventListener("error", (e) => {
+      console.error("WebSocket error:", e);
+    });
+  } catch (e) {
+    console.error("Failed to connect to WebSocket:", e);
+  }
+  // --- End WebSocket connection ---
 }
 
 main();

@@ -1,4 +1,4 @@
-import { Repo } from "./repo";
+import { DAO, db } from "./dao";
 
 export interface CaptchaItem {
   id?: number;
@@ -11,12 +11,11 @@ export interface CaptchaItem {
   updatetime: number;
 }
 
-export class CaptchaDAO extends Repo<CaptchaItem> {
-  constructor() {
-    super("captcha");
-  }
+export class CaptchaDAO extends DAO<CaptchaItem> {
+  public tableName = "captcha";
 
-  save(value: CaptchaItem) {
-    return super._save(value.key, value);
+  constructor() {
+    super();
+    this.table = db.table(this.tableName);
   }
 } 

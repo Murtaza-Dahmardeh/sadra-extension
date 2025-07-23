@@ -1,4 +1,4 @@
-import { Repo } from "./repo";
+import { DAO, db } from "./dao";
 
 export interface FormsItem {
   id?: number;
@@ -34,11 +34,11 @@ export interface FormsItem {
   updatetime: number;
 }
 
-export class FormsDAO extends Repo<FormsItem> {
+export class FormsDAO extends DAO<FormsItem> {
+  public tableName = "forms";
+
   constructor() {
-    super("forms");
-  }
-  save(value: FormsItem) {
-    return super._save(value.key, value);
+    super();
+    this.table = db.table(this.tableName);
   }
 } 

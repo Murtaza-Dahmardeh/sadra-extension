@@ -48,3 +48,23 @@ window.addEventListener('extension-db-request', async (event: Event) => {
   window.dispatchEvent(new CustomEvent('extension-db-response', { detail: response }));
 });
 // --- End Bridge ---
+
+// Listen for messages from the service worker to fill verification code
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('[Content Script] Message received:', message);
+  if (message && message.type === 'FILL_VERIFICATION') {
+    const input = document.querySelector('#id_activation_key');
+    const button = document.querySelector('#first_step_submit');
+    if (input) {
+      (input as HTMLInputElement).value = message.code;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[Content Script] Filled verification input');
+      if (button) {
+        (button as HTMLElement).click();
+        console.log('[Content Script] Clicked confirm button');
+      }
+    } else {
+      console.warn('[Content Script] Verification input not found');
+    }
+  }
+});

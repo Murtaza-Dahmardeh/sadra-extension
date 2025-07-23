@@ -102,4 +102,8 @@ export abstract class DAO<T> {
   public count() {
     return this.table.count();
   }
+
+  public all(): Promise<T[]> {
+    return this.table.toArray();
+  }
 }
