@@ -62,12 +62,12 @@ export class InjectRuntime {
         (<
           {
             external: {
-              Scriptcat: {
+              Sadra: {
                 isInstalled: (name: string, namespace: string, callback: any) => void;
               };
             };
           }
-        >(<unknown>window)).external.Scriptcat = {
+        >(<unknown>window)).external.Sadra = {
           async isInstalled(name: string, namespace: string, callback: any) {
             const resp = await sendMessage(msg, "content/script/isInstalled", {
               name,
@@ -77,8 +77,8 @@ export class InjectRuntime {
           },
         };
         (<{ external: { Tampermonkey: any } }>(<unknown>window)).external.Tampermonkey = (<
-          { external: { Scriptcat: any } }
-        >(<unknown>window)).external.Scriptcat;
+          { external: { Sadra: any } }
+        >(<unknown>window)).external.Sadra;
         break;
       }
     }

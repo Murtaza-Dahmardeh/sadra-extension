@@ -45,20 +45,20 @@ describe("checkSilenceUpdate", () => {
     expect(
       checkSilenceUpdate(
         {
-          connect: ["www.baidu.com"],
+          connect: ["www.sadratechs.com"],
         },
         {
-          connect: ["www.baidu.com"],
+          connect: ["www.sadratechs.com"],
         }
       )
     ).toBe(true);
     expect(
       checkSilenceUpdate(
         {
-          connect: ["www.baidu.com", "scriptcat.org"],
+          connect: ["www.sadratechs.com", "www.sadratechs.com"],
         },
         {
-          connect: ["scriptcat.org"],
+          connect: ["www.sadratechs.com"],
         }
       )
     ).toBe(true);
@@ -67,7 +67,7 @@ describe("checkSilenceUpdate", () => {
     expect(
       checkSilenceUpdate(
         {
-          connect: ["www.baidu.com"],
+          connect: ["www.sadratechs.com"],
         },
         {
           connect: ["www.google.com"],
@@ -77,10 +77,10 @@ describe("checkSilenceUpdate", () => {
     expect(
       checkSilenceUpdate(
         {
-          connect: ["www.baidu.com"],
+          connect: ["www.sadratechs.com"],
         },
         {
-          connect: ["www.baidu.com", "scriptcat.org"],
+          connect: ["www.sadratechs.com", "sadratechs.com"],
         }
       )
     ).toBe(false);

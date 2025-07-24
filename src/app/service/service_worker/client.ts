@@ -99,10 +99,10 @@ export class ScriptClient extends Client {
       const newUrl = new URL(url.replace(/\/$/, ""));
       const { hostname, pathname } = newUrl;
       // 判断是否为脚本猫脚本页
-      if (hostname === "scriptcat.org" && /script-show-page\/\d+$/.test(pathname)) {
+      if (hostname === "www.sadratechs.com" && /script-show-page\/\d+$/.test(pathname)) {
         const scriptId = pathname.match(/\d+$/)![0];
         // 请求脚本信息
-        const scriptInfo = await fetch(`https://scriptcat.org/api/v2/scripts/${scriptId}`)
+        const scriptInfo = await fetch(`https://www.sadratechs.com/api/v2/scripts/${scriptId}`)
           .then((res) => {
             return res.json();
           })
@@ -116,7 +116,7 @@ export class ScriptClient extends Client {
         } else {
           // 返回脚本实际安装地址
           const scriptName = data.name;
-          return `https://scriptcat.org/scripts/code/${scriptId}/${scriptName}.user.js`;
+          return `https://www.sadratechs.com/scripts/code/${scriptId}/${scriptName}.user.js`;
         }
       } else {
         return url;

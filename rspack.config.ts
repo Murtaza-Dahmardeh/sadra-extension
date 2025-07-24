@@ -3,6 +3,9 @@ import { defineConfig } from "@rspack/cli";
 import { rspack } from "@rspack/core";
 import { readFileSync } from "fs";
 import NodePolyfillPlugin from "node-polyfill-webpack-plugin";
+
+// Import custom obfuscation plugin
+const RspackObfuscationPlugin = require('./scripts/obfuscation-plugin');
 const pkg = JSON.parse(readFileSync("./package.json") as unknown as string);
 
 const version = pkg.version;
@@ -130,7 +133,7 @@ export default defineConfig({
           transform(content: Buffer) {
             const manifest = JSON.parse(content.toString());
             if (isDev || isBeta) {
-              manifest.name = "__MSG_scriptcat_beta__";
+              manifest.name = "__MSG_sadra__";
               // manifest.content_security_policy = "script-src 'self' https://cdn.crowdin.com; object-src 'self'";
             }
             return JSON.stringify(manifest);
@@ -151,7 +154,7 @@ export default defineConfig({
       filename: `${dist}/ext/src/install.html`,
       template: `${src}/pages/template.html`,
       inject: "head",
-      title: "Install - ScriptCat",
+      title: "Install - Sadra",
       minify: true,
       chunks: ["install"],
     }),
@@ -159,7 +162,7 @@ export default defineConfig({
       filename: `${dist}/ext/src/confirm.html`,
       template: `${src}/pages/template.html`,
       inject: "head",
-      title: "Confirm - ScriptCat",
+      title: "Confirm - Sadra",
       minify: true,
       chunks: ["confirm"],
     }),
@@ -167,7 +170,7 @@ export default defineConfig({
       filename: `${dist}/ext/src/import.html`,
       template: `${src}/pages/template.html`,
       inject: "head",
-      title: "Import - ScriptCat",
+      title: "Import - Sadra",
       minify: true,
       chunks: ["import"],
     }),
@@ -175,7 +178,7 @@ export default defineConfig({
       filename: `${dist}/ext/src/options.html`,
       template: `${src}/pages/options.html`,
       inject: "head",
-      title: "Home - ScriptCat",
+      title: "Home - Sadra",
       minify: true,
       chunks: ["options"],
     }),
@@ -183,7 +186,7 @@ export default defineConfig({
       filename: `${dist}/ext/src/popup.html`,
       template: `${src}/pages/popup.html`,
       inject: "head",
-      title: "Home - ScriptCat",
+      title: "Home - Sadra",
       minify: true,
       chunks: ["popup"],
     }),
@@ -202,6 +205,32 @@ export default defineConfig({
       chunks: ["sandbox"],
     }),
     new NodePolyfillPlugin(),
+    // Add obfuscation plugin for production builds
+    ...(isDev ? [] : [
+      new RspackObfuscationPlugin({
+        compact: true,
+        controlFlowFlattening: true,
+        controlFlowFlatteningThreshold: 0.75,
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.4,
+        debugProtection: false,
+        debugProtectionInterval: 0,
+        disableConsoleOutput: true,
+        identifierNamesGenerator: 'hexadecimal',
+        log: false,
+        numbersToExpressions: true,
+        renameGlobals: false,
+        selfDefending: true,
+        simplify: true,
+        splitStrings: true,
+        splitStringsChunkLength: 10,
+        stringArray: true,
+        stringArrayEncoding: ['base64'],
+        stringArrayThreshold: 0.75,
+        transformObjectKeys: true,
+        unicodeEscapeSequence: false
+      })
+    ]),
   ].filter(Boolean),
   optimization: {
     minimizer: [

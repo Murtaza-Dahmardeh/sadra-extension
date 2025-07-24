@@ -42,8 +42,8 @@ type SyncMeta = {
   isDeleted?: boolean;
 };
 
-type ScriptcatSync = {
-  version: string; // 脚本猫版本
+type SadraSync = {
+  version: string; // Sadra版本
   status: {
     scripts: {
       [key: string]: {
@@ -253,13 +253,13 @@ export class SynchronizeService {
       compressionOptions: {
         level: 9,
       },
-      comment: "Created by Scriptcat",
+      comment: "Created by Sadra",
     });
     const url = await createObjectURL(this.send, files);
     chrome.downloads.download({
       url,
       saveAs: true,
-      filename: `scriptcat-backup-${dayFormat(new Date(), "YYYY-MM-DDTHH-mm-ss")}.zip`,
+      filename: `sadra-backup-${dayFormat(new Date(), "YYYY-MM-DDTHH-mm-ss")}.zip`,
     });
     return;
   }
@@ -274,10 +274,10 @@ export class SynchronizeService {
     // 然后创建云端文件系统
     let cloudFs = await FileSystemFactory.create(type, params);
     try {
-      await cloudFs.createDir("ScriptCat");
-      cloudFs = await cloudFs.openDir("ScriptCat");
+      await cloudFs.createDir("Sadra");
+      cloudFs = await cloudFs.openDir("Sadra");
       // 云端文件系统写入文件
-      const file = await cloudFs.create(`scriptcat-backup-${dayFormat(new Date(), "YYYY-MM-DDTHH-mm-ss")}.zip`);
+      const file = await cloudFs.create(`sadra-backup-${dayFormat(new Date(), "YYYY-MM-DDTHH-mm-ss")}.zip`);
       await file.write(
         await zip.generateAsync({
           type: "blob",
@@ -285,7 +285,7 @@ export class SynchronizeService {
           compressionOptions: {
             level: 9,
           },
-          comment: "Created by Scriptcat",
+          comment: "Created by Sadra",
         })
       );
     } catch (e) {
@@ -301,8 +301,8 @@ export class SynchronizeService {
     try {
       fs = await FileSystemFactory.create(config.filesystem, config.params[config.filesystem]);
       // 创建base目录
-      await FileSystemFactory.mkdirAll(fs, "ScriptCat/sync");
-      fs = await fs.openDir("ScriptCat/sync");
+      await FileSystemFactory.mkdirAll(fs, "Sadra/sync");
+      fs = await fs.openDir("Sadra/sync");
     } catch (e: any) {
       this.logger.error("create filesystem error", Logger.E(e), {
         type: config.filesystem,
@@ -343,12 +343,12 @@ export class SynchronizeService {
         [key: string]: string;
       }) || {};
 
-    let scriptcatSync = {
+    let sadraSync = {
       version: ExtVersion,
       status: {
         scripts: {},
       },
-    } as ScriptcatSync;
+    } as SadraSync;
 
     list.forEach((file) => {
       if (file.name.endsWith(".user.js")) {
@@ -440,13 +440,13 @@ export class SynchronizeService {
     // 同步状态
     if (syncConfig.syncStatus) {
       // 判断文件系统是否有脚本猫同步文件
-      const file = list.find((file) => file.name === "scriptcat-sync.json");
+      const file = list.find((file) => file.name === "sadra-sync.json");
       if (file) {
         // 如果有,则读取文件内容
-        scriptcatSync = JSON.parse(await fs.open(file).then((f) => f.read("string"))) as ScriptcatSync;
+        sadraSync = JSON.parse(await fs.open(file).then((f) => f.read("string"))) as SadraSync;
       }
       const scriptlist = await this.scriptDAO.all();
-      const status = scriptcatSync.status.scripts;
+      const status = sadraSync.status.scripts;
       scriptlist.forEach(async (script) => {
         // 判断云端状态是否与本地状态一致
         if (!status[script.uuid]) {
@@ -485,9 +485,9 @@ export class SynchronizeService {
         }
       });
       // 保存脚本猫同步状态
-      const syncFile = await fs.create("scriptcat-sync.json");
-      await syncFile.write(JSON.stringify(scriptcatSync, null, 2));
-      this.logger.info("sync scriptcat sync file success");
+      const syncFile = await fs.create("sadra-sync.json");
+      await syncFile.write(JSON.stringify(sadraSync, null, 2));
+      this.logger.info("sync sadra sync file success");
     }
     // 重新获取文件列表,保存文件摘要
     await this.updateFileDigest(fs);

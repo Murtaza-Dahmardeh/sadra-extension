@@ -66,7 +66,7 @@ export class PopupService {
     // 创建根菜单
     chrome.contextMenus.create({
       id: "scriptMenu",
-      title: "ScriptCat",
+      title: "Sadra",
       contexts: ["all"],
     });
     if (menu) {

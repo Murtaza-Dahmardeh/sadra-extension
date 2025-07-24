@@ -109,7 +109,7 @@ function Setting() {
               className="w-32"
               onChange={(value) => {
                 if (value === "help") {
-                  window.open("https://crowdin.com/project/scriptcat", "_blank");
+                  window.open("https://crowdin.com/project/sadra", "_blank");
                   return;
                 }
                 setLanguage(value);

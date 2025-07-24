@@ -393,7 +393,7 @@
   "blacklist_pages": "黑名单页面",
   "blacklist_placeholder": "禁止脚本猫在以下页面运行脚本，多个页面用换行符分隔，例如:\nhttps://*.example.com",
   "expression_format_error": "表达式格式错误",
-  "migration_confirm_message": "重试迁移储存引擎会对现有数据造成修改，请确认，详情请看：https://docs.scriptcat.org/docs/change/v0.17/",
+  "migration_confirm_message": "重试迁移储存引擎会对现有数据造成修改，请确认，详情请看：",
   "retry_migration": "重试迁移储存引擎",
   "script_modified_leave_confirm": "脚本已修改, 离开后会丢失修改, 是否继续?",
   "create_success_note": "新建成功,请注意后台脚本不会默认开启",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sadra Techs IVBS
 // @namespace    http://tampermonkey.net/
-// @version      34.2.1
+// @version      35.2.0
 // @description  Fully automated IVBS script (optimized single file) by Sadra Techs & Murtaza Mohammadi
 // @author       murtaza
 // @match        https://evisatraveller.mfa.ir/*

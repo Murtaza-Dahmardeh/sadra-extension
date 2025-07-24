@@ -2,13 +2,13 @@
   "i18n": {
     "message": "I18n"
   },
-  "scriptcat": {
-    "message": "ScriptCat"
+  "Sadra": {
+    "message": "Sadra"
   },
-  "scriptcat_beta": {
-    "message": "ScriptCat Beta"
+  "sadra_beta": {
+    "message": "Sadra Beta"
   },
-  "scriptcat_description": {
+  "sadra_description": {
     "message": "Mọi thứ đều có thể viết được, cho phép trình duyệt của bạn làm được nhiều việc hơn!"
   }
 }

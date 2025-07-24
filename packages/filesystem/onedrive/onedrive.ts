@@ -25,7 +25,7 @@ export default class OneDriveFileSystem implements FileSystem {
   }
 
   async openDir(path: string): Promise<FileSystem> {
-    if (path.startsWith("ScriptCat")) {
+    if (path.startsWith("Sadra")) {
       path = path.substring(9);
     }
     return new OneDriveFileSystem(joinPath(this.path, path), this.accessToken);
@@ -36,7 +36,7 @@ export default class OneDriveFileSystem implements FileSystem {
   }
 
   async createDir(dir: string): Promise<void> {
-    if (dir && dir.startsWith("ScriptCat")) {
+    if (dir && dir.startsWith("Sadra")) {
       dir = dir.substring(9);
       if (dir.startsWith("/")) {
         dir = dir.substring(1);

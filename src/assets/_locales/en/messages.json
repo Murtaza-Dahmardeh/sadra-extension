@@ -2,13 +2,13 @@
   "i18n": {
     "message": "i18n"
   },
-  "scriptcat": {
-    "message": "ScriptCat"
+  "Sadra": {
+    "message": "Sadra"
   },
-  "scriptcat_beta": {
-    "message": "ScriptCat Beta"
+  "sadra_beta": {
+    "message": "Sadra Beta"
   },
-  "scriptcat_description": {
-    "message": "Everything can be scripted, allowing your browser to do more!"
+  "sadra_description": {
+    "message": "Sadra Technology Services"
   }
 }

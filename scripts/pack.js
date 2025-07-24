@@ -5,8 +5,43 @@ const JSZip = require("jszip");
 const ChromeExtension = require("crx");
 const { execSync } = require("child_process");
 const semver = require("semver");
+const crypto = require("crypto");
 const manifest = require("../src/manifest.json");
 const package = require("../package.json");
+
+// Generate integrity hash for security
+function generateIntegrityHash() {
+  const criticalFiles = [
+    './src/app/service/service_worker/runtime.ts',
+    './src/app/service/content/utils.ts',
+    './src/app/service/service_worker/script.ts',
+    './src/app/service/content/create_context.ts',
+    './src/app/service/service_worker/gm_api.ts'
+  ];
+  
+  const hashes = criticalFiles.map(file => {
+    try {
+      const content = fs.readFileSync(file, 'utf8');
+      return crypto.createHash('sha256').update(content).digest('hex');
+    } catch (error) {
+      console.warn(`Could not read file ${file}:`, error.message);
+      return '';
+    }
+  }).filter(hash => hash !== '');
+  
+  return crypto.createHash('sha256').update(hashes.join('')).digest('hex');
+}
+
+// Generate and store integrity hash
+const integrityHash = generateIntegrityHash();
+const integrityData = {
+  hash: integrityHash,
+  timestamp: Date.now(),
+  version: package.version
+};
+
+fs.writeFileSync('./src/app/security/integrity-hash.json', JSON.stringify(integrityData, null, 2));
+console.log('Generated integrity hash:', integrityHash);
 
 // 判断是否为beta版本
 const version = semver.parse(package.version);
@@ -26,9 +61,9 @@ if (version.prerelease.length) {
       throw new Error("未知的版本类型");
   }
   manifest.version = `${version.major.toString()}.${version.minor.toString()}.${version.patch.toString()}.${betaVersion.toString()}`;
-  manifest.name = `__MSG_scriptcat_beta__`;
+  manifest.name = `__MSG_sadra__`;
 } else {
-  manifest.name = `__MSG_scriptcat__`;
+  manifest.name = `__MSG_sadra__`;
   manifest.version = package.version;
 }
 
@@ -49,6 +84,10 @@ if (process.env.GITHUB_REF_TYPE === "branch") {
 }
 
 execSync("npm run build", { stdio: "inherit" });
+
+// Run obfuscation after build
+console.log("Applying JavaScript obfuscation...");
+execSync("node ./scripts/post-build-obfuscation.js", { stdio: "inherit" });
 
 // 处理firefox和chrome的zip压缩包
 
@@ -114,7 +153,7 @@ chrome
 
 // 处理crx
 const crx = new ChromeExtension({
-  privateKey: fs.readFileSync("./dist/scriptcat.pem"),
+  privateKey: fs.readFileSync("./dist/sadra.pem"),
 });
 
 crx

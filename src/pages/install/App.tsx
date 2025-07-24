@@ -245,7 +245,7 @@ function App() {
     }
 
     if (upsertScript) {
-      document.title = `${!isUpdate ? t("install_script") : t("update_script")} - ${i18nName(upsertScript)} - ScriptCat`;
+      document.title = `${!isUpdate ? t("install_script") : t("update_script")} - ${i18nName(upsertScript)} - Sadra`;
     }
   }, [isUpdate, scriptInfo, upsertScript, t]);
 

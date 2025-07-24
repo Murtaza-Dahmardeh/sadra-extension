@@ -2,13 +2,13 @@
   "i18n": {
     "message": "i18n"
   },
-  "scriptcat": {
-    "message": "腳本貓"
+  "Sadra": {
+    "message": "Sadra"
   },
-  "scriptcat_beta": {
-    "message": "腳本貓 Beta"
+  "sadra_beta": {
+    "message": "Sadra Beta"
   },
-  "scriptcat_description": {
+  "sadra_description": {
     "message": "萬物皆可腳本化，讓你的瀏覽器可以做更多的事情！"
   }
 }

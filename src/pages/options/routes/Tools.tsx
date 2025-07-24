@@ -38,62 +38,6 @@ function Tools() {
   const [backupFileList, setBackupFileList] = useState<File[]>([]);
   const vscodeRef = useRef<RefInputType>(null);
   const { t } = useTranslation();
-  const [userKey, setUserKey] = useState("");
-  const [installLoading, setInstallLoading] = useState(false);
-  const [installStatus, setInstallStatus] = useState<string | null>(null);
-
-  // User key install logic
-  const handleUserKeyInstall = async () => {
-    if (!userKey) {
-      Message.error("Please enter a user key.");
-      return;
-    }
-    setInstallLoading(true);
-    setInstallStatus(null);
-    try {
-      // 1. POST user_key to server
-      const resp = await fetch("http://localhost:3007/get-download-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_key: userKey }),
-      });
-      if (!resp.ok) throw new Error("Failed to get download URL");
-      const data = await resp.json();
-      if (!data.download_url) throw new Error("No download_url in response");
-      // 2. Download script
-      const scriptResp = await fetch(data.download_url);
-      if (!scriptResp.ok) throw new Error("Failed to download script");
-      const scriptText = await scriptResp.text();
-      // 3. Store script (use background logic via message passing)
-      await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          {
-            action: "serviceWorker/install_script_by_code",
-            data: {
-              code: scriptText,
-              source: "user",
-            },
-          },
-          (result) => {
-            console.log("install_script_by_code result", result, chrome.runtime.lastError);
-            if (result.data.success) {
-              resolve(result);
-            } else {
-              reject(result.data.error);
-            }
-          }
-        );
-      });
-      setInstallStatus("success");
-      Message.success("Script installed successfully!");
-    } catch (e: any) {
-      console.error("Failed to install script:", e);
-      setInstallStatus("error");
-      Message.error(e.message || "Failed to install script");
-    } finally {
-      setInstallLoading(false);
-    }
-  };
 
   useEffect(() => {
     // 获取配置
@@ -211,7 +155,7 @@ function Tools() {
                   setLoading((prev) => ({ ...prev, cloud: true }));
                   try {
                     let fs = await FileSystemFactory.create(fileSystemType, fileSystemParams);
-                    fs = await fs.openDir("ScriptCat");
+                    fs = await fs.openDir("Sadra");
                     let list = await fs.list();
                     list.sort((a, b) => b.updatetime - a.updatetime);
                     // Filter non-zip files
@@ -244,7 +188,7 @@ function Tools() {
                   onClick={async () => {
                     let fs = await FileSystemFactory.create(fileSystemType, fileSystemParams);
                     try {
-                      fs = await fs.openDir("ScriptCat");
+                      fs = await fs.openDir("Sadra");
                       const url = await fs.getDirUrl();
                       if (url) {
                         window.open(url, "_black");
@@ -282,7 +226,7 @@ function Tools() {
                         let file: FileReader;
                         let data: Blob;
                         try {
-                          fs = await fs.openDir("ScriptCat");
+                          fs = await fs.openDir("Sadra");
                           file = await fs.open(item);
                           data = (await file.read("blob")) as Blob;
                         } catch (e) {
@@ -312,7 +256,7 @@ function Tools() {
                           onOk: async () => {
                             let fs = await FileSystemFactory.create(fileSystemType, fileSystemParams);
                             try {
-                              fs = await fs.openDir("ScriptCat");
+                              fs = await fs.openDir("Sadra");
                               await fs.delete(item.name);
                               setBackupFileList(backupFileList.filter((i) => i.name !== item.name));
                               Message.success(t("delete_success")!);
@@ -405,31 +349,6 @@ function Tools() {
           >
             {t("connect")}
           </Button>
-        </Space>
-      </Card>
-
-      <Card className="user-key-install" title={t("Install Script by User Key") || "Install Script by User Key"} bordered={false} style={{ marginBottom: 16 }}>
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <Input
-              placeholder="Enter user key"
-              value={userKey}
-              onChange={setUserKey}
-              style={{ flex: 1 }}
-              disabled={installLoading}
-            />
-            <Button
-              type="primary"
-              loading={installLoading}
-              onClick={handleUserKeyInstall}
-              disabled={!userKey || installLoading}
-            >
-              Submit
-            </Button>
-          </div>
-          {installLoading && <span style={{ marginLeft: 8 }}>Installing...</span>}
-          {installStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Success!</span>}
-          {installStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Failed!</span>}
         </Space>
       </Card>
     </Space>

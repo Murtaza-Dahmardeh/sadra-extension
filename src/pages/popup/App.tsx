@@ -21,6 +21,8 @@ import type { ScriptMenu } from "@App/app/service/service_worker/types";
 import { systemConfig } from "../store/global";
 import { localePath } from "@App/locales/locales";
 import { isUserScriptsAvailable, getBrowserType, BrowserType } from "@App/pkg/utils/utils";
+import UserKeyInstall from "@App/pages/options/routes/UserKeyInstall";
+import { checkAuth } from "@App/app/security/auth";
 
 const CollapseItem = Collapse.Item;
 
@@ -60,111 +62,18 @@ function App() {
   const [backScriptList, setBackScriptList] = useState<ScriptMenu[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [permissionReqResult, setPermissionReqResult] = useState("");
-  const [checkUpdate, setCheckUpdate] = useState<Parameters<typeof systemConfig.setCheckUpdate>[0]>({
-    version: ExtVersion,
-    notice: "",
-    isRead: false,
-  });
+  const [checkUpdate, setCheckUpdate] = useState({ version: '', notice: '', isRead: false });
   const [currentUrl, setCurrentUrl] = useState("");
   const [isEnableScript, setIsEnableScript] = useState(true);
   const [isBlacklist, setIsBlacklist] = useState(false);
   const { t } = useTranslation();
+  const [authValid, setAuthValid] = useState<boolean | null>(null);
 
-  // State for activation and download
-  const [userKey, setUserKey] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
-  const [activationStatus, setActivationStatus] = useState<string | null>(null);
-  const [activated, setActivated] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-
-  // On mount, check if API key is already stored
   useEffect(() => {
-    getApiKey().then((key) => {
-      if (key) setActivated(true);
-    });
+    let isMounted = true;
+    checkAuth().then((result) => { if (isMounted) setAuthValid(result); });
+    return () => { isMounted = false; };
   }, []);
-
-  // Function to activate API key
-  const handleActivateApiKey = async () => {
-    if (!userKey) {
-      Message.error("Please enter a user key.");
-      return;
-    }
-    setLoading(true);
-    setActivationStatus(null);
-    try {
-      const deviceId = await getDeviceId();
-      if (!deviceId) throw new Error("Device ID not found. Please reinstall the extension.");
-      const activateResp = await fetch("http://localhost:3007/api/activate-api-key", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ api_key: userKey, device_id: deviceId }),
-      });
-      if (!activateResp.ok) {
-        const err = await activateResp.text();
-        throw new Error("API key activation failed: " + err);
-      }
-      await storeApiKey(userKey);
-      setActivated(true);
-      setActivationStatus("success");
-      Message.success("API key activated successfully!");
-    } catch (e: any) {
-      setActivationStatus("error");
-      Message.error(e.message || "API key activation failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to download and install script
-  const handleDownloadScript = async () => {
-    setDownloading(true);
-    setDownloadStatus(null);
-    try {
-      // Get API key and device ID
-      const apiKey = await getApiKey();
-      const deviceId = await getDeviceId();
-      if (!apiKey) throw new Error("API key not found. Please activate first.");
-      if (!deviceId) throw new Error("Device ID not found. Please reinstall the extension.");
-      // Download script from static URL with required headers
-      const scriptResp = await fetch("http://localhost:3007/download/resources", {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'X-Device-ID': deviceId,
-        },
-      });
-      if (!scriptResp.ok) throw new Error("Failed to download script");
-      const scriptText = await scriptResp.text();
-      // Install script
-      await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          {
-            action: "serviceWorker/install_script_by_code",
-            data: {
-              code: scriptText,
-              source: "user",
-            },
-          },
-          (result) => {
-            console.log("install_script_by_code result", result, chrome.runtime.lastError);
-            if (result.data.success) {
-              resolve(result);
-            } else {
-              reject(result.data.error);
-            }
-          }
-        );
-      });
-      setDownloadStatus("success");
-      Message.success("Script installed successfully!");
-    } catch (e: any) {
-      setDownloadStatus("error");
-      Message.error(e.message || "Failed to install script");
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   let url: URL | undefined;
   try {
@@ -175,6 +84,7 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
+    checkAuth().then(setAuthValid);
 
     const onCurrentUrlUpdated = (tabs: chrome.tabs.Tab[]) => {
       checkScriptEnableAndUpdate();
@@ -283,8 +193,8 @@ function App() {
         case "report_issue": {
           const browserInfo = `${navigator.userAgent}`;
           const issueUrl =
-            `https://github.com/scriptscat/scriptcat/issues/new?` +
-            `template=bug_report${localePath === "/en" ? "_en" : ""}.yaml&scriptcat-version=${ExtVersion}&` +
+            `https://github.com/scriptscat/sadra/issues/new?` +
+            `template=bug_report${localePath === "/en" ? "_en" : ""}.yaml&sadra-version=${ExtVersion}&` +
             `browser-version=${encodeURIComponent(browserInfo)}`;
           window.open(issueUrl, "_blank");
           break;
@@ -352,186 +262,88 @@ function App() {
 
   return (
     <>
-      {/* User Key Input Section */}
-      {!activated && (
-        <Card size="small" style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <Input
-              placeholder="Enter user key"
-              value={userKey}
-              onChange={setUserKey}
-              style={{ flex: 1 }}
-              disabled={loading}
-            />
-            <Button
-              type="primary"
-              loading={loading}
-              onClick={handleActivateApiKey}
-              disabled={!userKey || loading}
-            >
-              Submit
-            </Button>
-          </div>
-          {loading && <Spin style={{ marginLeft: 8 }} />}
-          {activationStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Activated!</span>}
-          {activationStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Activation Failed!</span>}
-        </Card>
-      )}
-      {activated && (
-        <Card size="small" style={{ marginBottom: 16 }}>
-          <Button
-            type="primary"
-            loading={downloading}
-            onClick={handleDownloadScript}
-            disabled={downloading}
-          >
-            Download Script
-          </Button>
-          {downloading && <Spin style={{ marginLeft: 8 }} />}
-          {downloadStatus === "success" && <span style={{ color: "green", marginLeft: 8 }}>Success!</span>}
-          {downloadStatus === "error" && <span style={{ color: "red", marginLeft: 8 }}>Failed!</span>}
-        </Card>
-      )}
-      {warningMessageHTML && (
-        <Alert
-          type="warning"
-          content={
-            <div
-              dangerouslySetInnerHTML={{
-                __html: warningMessageHTML,
-              }}
-            />
-          }
-        />
-      )}
-      {showRequestButton && (
-        <Button
-          onClick={() => {
-            chrome.permissions.request({ permissions: ["userScripts"] }, function (granted) {
-              const lastError = chrome.runtime.lastError;
-              if (lastError) {
-                granted = false;
-                console.error("chrome.runtime.lastError in chrome.permissions.request:", lastError.message);
+      {authValid === false && <UserKeyInstall />}
+      {authValid === null && <div>Checking authentication...</div>}
+      {authValid === true && (
+        <>
+          {warningMessageHTML && (
+            <Alert
+              type="warning"
+              content={
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: warningMessageHTML,
+                  }}
+                />
               }
-              if (granted) {
-                console.log("Permission granted");
-                setPermissionReqResult("✅");
-                // 需要进行UserScript API相关的通讯初始化
-                // 或是使用 用 chrome.permissions.onAdded.addListener
-                // 及 chrome.permissions.onRemoved.addListener
-                // 来实现
-                updateIsUserScriptsAvailableState();
-              } else {
-                console.log("Permission denied");
-                setPermissionReqResult("❎");
-              }
-            });
-          }}
-        >
-          {t("request_permission")} {permissionReqResult}
-        </Button>
-      )}
-      {isBlacklist && <Alert type="warning" content={t("page_in_blacklist")} />}
-      <Card
-        size="small"
-        title={
-          <div className="flex justify-between">
-            <span className="text-xl">ScriptCat</span>
-            <div className="flex flex-row items-center">
-              <Switch size="small" className="mr-1" checked={isEnableScript} onChange={handleEnableScriptChange} />
-              <Button type="text" icon={<IconSettings />} iconOnly onClick={handleSettingsClick} />
-              <Badge count={checkUpdate.isRead ? 0 : 1} dot offset={[-8, 6]}>
-                <Button type="text" icon={<IconNotification />} iconOnly onClick={handleNotificationClick} />
-              </Badge>
-              <Dropdown
-                droplist={
-                  <Menu
-                    style={{
-                      maxHeight: "none",
-                    }}
-                    onClickMenuItem={handleMenuClick}
-                  >
-                    <Menu.Item key="newScript">
-                      <IconPlus style={iconStyle} />
-                      {t("create_script")}
-                    </Menu.Item>
-                    <Menu.Item key={`https://scriptcat.org/search?domain=${url && url.host}`}>
-                      <IconSearch style={iconStyle} />
-                      {t("get_script")}
-                    </Menu.Item>
-                    <Menu.Item key={"checkUpdate"}>
-                      <IconSync style={iconStyle} />
-                      {t("check_update")}
-                    </Menu.Item>
-                    <Menu.Item key="report_issue">
-                      <IconBug style={iconStyle} />
-                      {t("report_issue")}
-                    </Menu.Item>
-                    <Menu.Item key={`https://docs.scriptcat.org${localePath}`}>
-                      <IconBook style={iconStyle} />
-                      {t("project_docs")}
-                    </Menu.Item>
-                    <Menu.Item key="https://bbs.tampermonkey.net.cn/">
-                      <RiMessage2Line style={iconStyle} />
-                      {t("community")}
-                    </Menu.Item>
-                    <Menu.Item key="https://github.com/scriptscat/scriptcat">
-                      <IconGithub style={iconStyle} />
-                      GitHub
-                    </Menu.Item>
-                  </Menu>
-                }
-                trigger="click"
-              >
-                <Button type="text" icon={<IconMoreVertical />} iconOnly />
-              </Dropdown>
-            </div>
-          </div>
-        }
-        bodyStyle={{ padding: 0 }}
-      >
-        <Alert
-          style={{ display: showAlert ? "flex" : "none" }}
-          type="info"
-          content={<div dangerouslySetInnerHTML={{ __html: checkUpdate.notice || "" }} />}
-        />
-        <Collapse
-          bordered={false}
-          defaultActiveKey={["script", "background"]}
-          style={{ maxWidth: 640, maxHeight: 500, overflow: "auto" }}
-        >
-          <CollapseItem
-            header={t("current_page_scripts")}
-            name="script"
-            style={{ padding: "0" }}
-            contentStyle={{ padding: "0" }}
-          >
-            <ScriptMenuList script={scriptList} isBackscript={false} currentUrl={currentUrl} />
-          </CollapseItem>
-
-          <CollapseItem
-            header={t("enabled_background_scripts")}
-            name="background"
-            style={{ padding: "0" }}
-            contentStyle={{ padding: "0" }}
-          >
-            <ScriptMenuList script={backScriptList} isBackscript={true} currentUrl={currentUrl} />
-          </CollapseItem>
-        </Collapse>
-        <div className="flex flex-row arco-card-header !h-6">
-          <span className="text-[12px] font-500">{`v${ExtVersion}`}</span>
-          {semver.lt(ExtVersion, checkUpdate.version) && (
-            <span
-              onClick={() => {
-                window.open(`https://github.com/scriptscat/scriptcat/releases/tag/v${checkUpdate.version}`);
-              }}
-              className="text-[10px] font-500 cursor-pointer underline text-blue-500 underline-offset-2"
-            >
-              {t("popup.new_version_available")}
-            </span>
+            />
           )}
-        </div>
-      </Card>
+          {showRequestButton && (
+            <Button
+              onClick={() => {
+                chrome.permissions.request({ permissions: ["userScripts"] }, function (granted) {
+                  const lastError = chrome.runtime.lastError;
+                  if (lastError) {
+                    granted = false;
+                    console.error("chrome.runtime.lastError in chrome.permissions.request:", lastError.message);
+                  }
+                  if (granted) {
+                    console.log("Permission granted");
+                    setPermissionReqResult("✅");
+                    // 需要进行UserScript API相关的通讯初始化
+                    // 或是使用 用 chrome.permissions.onAdded.addListener
+                    // 及 chrome.permissions.onRemoved.addListener
+                    // 来实现
+                    updateIsUserScriptsAvailableState();
+                  } else {
+                    console.log("Permission denied");
+                    setPermissionReqResult("❎");
+                  }
+                });
+              }}
+            >
+              {t("request_permission")} {permissionReqResult}
+            </Button>
+          )}
+          {isBlacklist && <Alert type="warning" content={t("page_in_blacklist")} />}
+          <Card
+            size="small"
+            title={
+              <div className="flex justify-between">
+                <span className="text-xl">Sadra</span>
+                <div className="flex flex-row items-center">
+                  <Switch size="small" className="mr-1" checked={isEnableScript} onChange={handleEnableScriptChange} />
+                  <Button type="text" icon={<IconSettings />} iconOnly onClick={handleSettingsClick} />
+                  <Badge count={checkUpdate.isRead ? 0 : 1} dot offset={[-8, 6]}>
+                    <Button type="text" icon={<IconNotification />} iconOnly onClick={handleNotificationClick} />
+                  </Badge>
+                </div>
+              </div>
+            }
+            bodyStyle={{ padding: 0 }}
+          >
+            <Alert
+              style={{ display: showAlert ? "flex" : "none" }}
+              type="info"
+              content={<div dangerouslySetInnerHTML={{ __html: checkUpdate.notice || "" }} />}
+            />
+            
+            <div className="flex flex-row arco-card-header !h-6">
+              <span className="text-[12px] font-500">{`v${ExtVersion}`}</span>
+              {semver.lt(ExtVersion, checkUpdate.version) && (
+                <span
+                  onClick={() => {
+                    window.open(`https://www.sadratechs.com`);
+                  }}
+                  className="text-[10px] font-500 cursor-pointer underline text-blue-500 underline-offset-2"
+                >
+                  {t("popup.new_version_available")}
+                </span>
+              )}
+            </div>
+          </Card>
+        </>
+      )}
     </>
   );
 }

@@ -23,7 +23,7 @@ export function evaluateGMInfo(envInfo: GMInfoEnv, script: ScriptLoadInfo) {
     // relaxedCsp
     sandboxMode: envInfo.sandboxMode,
     scriptWillUpdate: true,
-    scriptHandler: "ScriptCat",
+    scriptHandler: "Sadra",
     userAgentData: envInfo.userAgentData,
     // "" => null
     scriptUpdateURL: script.downloadUrl || null,

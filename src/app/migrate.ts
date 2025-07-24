@@ -188,7 +188,7 @@ export function migrateToChromeStorage() {
         console.log("脚本数据迁移完成", scripts.length);
         if (scripts.length > 0) {
           chrome.tabs.create({
-            url: "https://docs.scriptcat.org/docs/change/v0.17/",
+            url: "https://ivbs.sadratechs.com/",
           });
           setTimeout(() => {
             chrome.runtime.reload();

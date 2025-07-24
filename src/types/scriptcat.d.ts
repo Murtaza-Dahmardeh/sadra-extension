@@ -24,7 +24,7 @@ declare type UserConfig = { [key: string]: { [key: string]: Config } };
 declare const GM_info: {
   version: string;
   scriptWillUpdate: boolean;
-  scriptHandler: "ScriptCat";
+  scriptHandler: "Sadra";
   scriptUpdateURL?: string;
   // scriptSource: string;
   scriptMetaStr?: string;

@@ -20,6 +20,9 @@ import type FileSystem from "@Packages/filesystem/filesystem";
 import { isWarpTokenError } from "@Packages/filesystem/error";
 import { joinPath } from "@Packages/filesystem/utils";
 import type { EmitEventRequest, MessageRequest, NotificationMessageOption, Request } from "./types";
+import { IntegrityChecker } from "@App/app/security/integrity-check";
+import { LicenseManager } from "@App/app/security/license";
+import { SecurityConfigManager } from "@App/app/security/config";
 
 // GMApi,处理脚本的GM API调用请求
 
@@ -135,6 +138,18 @@ export default class GMApi {
   }
 
   async handlerRequest(data: MessageRequest, sender: GetSender) {
+    // Security validation before handling requests
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+      if (!IntegrityChecker.checkIntegrity()) {
+        throw new Error("Security check failed");
+      }
+      
+      const licenseValid = await LicenseManager.validateLicense();
+      if (!licenseValid) {
+        throw new Error("Invalid license");
+      }
+    }
+    
     this.logger.trace("GM API request", { api: data.api, uuid: data.uuid, param: data.params });
     const api = PermissionVerifyApiGet(data.api);
     if (!api) {
@@ -354,7 +369,7 @@ export default class GMApi {
       return { action: "error", data: { code: 2, error: "file storage is error" } };
     }
     let fs: FileSystem;
-    const baseDir = `ScriptCat/app/${details.baseDir ? details.baseDir : request.script.uuid}`;
+    const baseDir = `Sadra/app/${details.baseDir ? details.baseDir : request.script.uuid}`;
     try {
       fs = await FileSystemFactory.create(fsConfig.filesystem, fsConfig.params[fsConfig.filesystem]);
       await FileSystemFactory.mkdirAll(fs, baseDir);
@@ -439,7 +454,7 @@ export default class GMApi {
 
     const requestHeaders = [
       {
-        header: "X-Scriptcat-GM-XHR-Request-Id",
+        header: "X-Sadra-GM-XHR-Request-Id",
         operation: "remove",
       },
     ] as chrome.declarativeNetRequest.ModifyHeaderInfo[];
@@ -715,7 +730,7 @@ export default class GMApi {
       params.cookiePartition.topLevelSite = undefined;
     }
 
-    params.headers["X-Scriptcat-GM-XHR-Request-Id"] = requestId.toString();
+    params.headers["X-Sadra-GM-XHR-Request-Id"] = requestId.toString();
     params.headers = await this.buildDNRRule(requestId, request.params[0], sender);
     const resultParam: RequestResultParams = {
       requestId,
@@ -864,8 +879,8 @@ export default class GMApi {
     const details: GMTypes.NotificationDetails = request.params[0];
     const notificationId: string | undefined = request.params[1];
     const options: chrome.notifications.NotificationCreateOptions = {
-      title: details.title || "ScriptCat",
-      message: details.text || "无消息内容",
+      title: details.title || "Sadra",
+      message: details.text || "Sadra",
       iconUrl: details.image || getIcon(request.script) || chrome.runtime.getURL("assets/logo.png"),
       type: isFirefox() || details.progress === undefined ? "basic" : "progress",
     };
@@ -1160,10 +1175,10 @@ export default class GMApi {
           return undefined;
         }
         if (details.tabId === -1) {
-          // 判断是否存在X-Scriptcat-GM-XHR-Request-Id
-          // 讲请求id与chrome.webRequest的请求id关联
+          // 判断是否存在X-Sadra-GM-XHR-Request-Id
+          // 将请求id与chrome.webRequest的请求id关联
           if (details.requestHeaders) {
-            const requestId = details.requestHeaders.find((header) => header.name === "X-Scriptcat-GM-XHR-Request-Id");
+            const requestId = details.requestHeaders.find((header) => header.name === "X-Sadra-GM-XHR-Request-Id");
             if (requestId) {
               this.cache.set("gmXhrRequest:" + details.requestId, requestId.value);
             }

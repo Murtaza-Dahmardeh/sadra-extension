@@ -1,0 +1,10 @@
+export { IntegrityChecker } from './integrity-check';
+export { AntiTamper } from './anti-tamper';
+export { LicenseManager } from './license';
+export { DynamicCodeGenerator } from './dynamic-code';
+export { SecurityConfigManager } from './config';
+export { SecurityInitializer } from './init';
+export { SecurityMiddleware } from './middleware';
+export type { LicenseInfo } from './license';
+export type { SecurityConfig } from './config';
+export type { SecurityMiddlewareOptions } from './middleware'; 

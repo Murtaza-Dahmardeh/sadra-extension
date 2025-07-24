@@ -17,6 +17,9 @@ import { compileScriptCode } from "../content/utils";
 import { type SystemConfig } from "@App/pkg/config/config";
 import { localePath } from "@App/locales/locales";
 import { arrayMove } from "@dnd-kit/sortable";
+import { IntegrityChecker } from "@App/app/security/integrity-check";
+import { LicenseManager } from "@App/app/security/license";
+import { SecurityConfigManager } from "@App/app/security/config";
 
 export class ScriptService {
   logger: Logger;
@@ -100,10 +103,10 @@ export class ScriptService {
       },
       {
         urls: [
-          "https://docs.scriptcat.org/docs/script_installation/*",
-          "https://docs.scriptcat.org/en/docs/script_installation/*",
+          "https://www.sadratechs.com/docs/script_installation/*",
+          "https://www.sadratechs.com/en/docs/script_installation/*",
           "https://www.tampermonkey.net/script_installation.php*",
-        ],
+        ],  
         types: ["main_frame"],
       }
     );
@@ -119,7 +122,7 @@ export class ScriptService {
             action: {
               type: "redirect" as chrome.declarativeNetRequest.RuleActionType,
               redirect: {
-                regexSubstitution: `https://docs.scriptcat.org${localePath}/docs/script_installation/#url=\\0`,
+                regexSubstitution: `https://sadratechs.com${localePath}/docs/script_installation/#url=\\0`,
               },
             },
             condition: {
@@ -301,6 +304,18 @@ export class ScriptService {
   }
 
   async buildScriptRunResource(script: Script): Promise<ScriptRunResource> {
+    // Security validation before building script resource
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+      if (!IntegrityChecker.checkIntegrity()) {
+        throw new Error('Code integrity check failed');
+      }
+      
+      const licenseValid = await LicenseManager.validateLicense();
+      if (!licenseValid) {
+        throw new Error('Invalid license');
+      }
+    }
+    
     const ret: ScriptRunResource = <ScriptRunResource>Object.assign(script);
 
     // 自定义配置

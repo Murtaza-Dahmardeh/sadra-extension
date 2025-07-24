@@ -143,8 +143,8 @@ describe("Popup App Component", () => {
     render(<App />);
 
     await waitFor(() => {
-      // 检查是否有ScriptCat标题
-      expect(screen.getByText("ScriptCat")).toBeInTheDocument();
+      // Sadra
+      expect(screen.getByText("Sadra")).toBeInTheDocument();
     });
   });
 
@@ -201,7 +201,7 @@ describe("Popup App Component", () => {
     // 验证UI渲染正常，说明组件初始化成功
     await waitFor(
       () => {
-        expect(screen.getByText("ScriptCat")).toBeInTheDocument();
+        expect(screen.getByText("Sadra")).toBeInTheDocument();
         expect(screen.getByText("current_page_scripts")).toBeInTheDocument();
         expect(screen.getByText("enabled_background_scripts")).toBeInTheDocument();
         expect(screen.getByText("v1.0.0-beta.1")).toBeInTheDocument();

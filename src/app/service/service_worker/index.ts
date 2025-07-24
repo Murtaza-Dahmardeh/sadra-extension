@@ -185,7 +185,7 @@ export default class ServiceWorkerManager {
               chrome.storage.local.set({ [KEY_NAME]: uniqueKey });
             }
           });
-          chrome.tabs.create({ url: "https://docs.scriptcat.org" + localePath });
+          chrome.tabs.create({ url: "https://www.sadratechs.com" });
         } else if (details.reason === "update") {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const lastError = chrome.runtime.lastError;
@@ -197,9 +197,7 @@ export default class ServiceWorkerManager {
             // 如果当前窗口正在播放 audio, 则在后台打开
             const active = tabs.length === 0 ? false : tabs[0].audible === true ? false : true;
             chrome.tabs.create({
-              url: `https://docs.scriptcat.org/docs/change/${
-                ExtVersion.includes("-") ? "beta-changelog/" : ""
-              }#${ExtVersion}`,
+              url: `https://www.sadratechs.com/`,
               active: active,
             });
             InfoNotification(t("ext_update_notification"), t("ext_update_notification_desc", { version: ExtVersion }));
@@ -212,8 +210,12 @@ export default class ServiceWorkerManager {
   checkUpdate() {
     fetch(`${ExtServer}api/v1/system/version?version=${ExtVersion}`)
       .then((resp) => resp.json())
-      .then((resp: { data: { notice: string; version: string } }) => {
+      .then((resp: { data?: { notice: string; version: string } }) => {
         systemConfig.getCheckUpdate().then((items) => {
+          if (!items || !resp.data) {
+            // Optionally, handle the error or set defaults
+            return;
+          }
           if (items.notice !== resp.data.notice) {
             systemConfig.setCheckUpdate(Object.assign(resp.data, { isRead: false }));
           } else {

@@ -5,6 +5,7 @@ import { CustomEventMessage } from "@Packages/message/custom_event_message";
 import { RuntimeClient } from "./app/service/service_worker/client";
 import { Server } from "@Packages/message/server";
 import ContentRuntime from "./app/service/content/content";
+import { SecurityInitializer } from "./app/security/init";
 
 // 建立与service_worker页面的连接
 const send = new ExtensionMessageSend();
@@ -13,6 +14,13 @@ const send = new ExtensionMessageSend();
 const loggerCore = new LoggerCore({
   writer: new MessageWriter(send),
   labels: { env: "content" },
+});
+
+// Initialize security measures for content script
+SecurityInitializer.initialize().then(success => {
+  if (!success) {
+    console.error('Content script: Security initialization failed');
+  }
 });
 
 const client = new RuntimeClient(send);

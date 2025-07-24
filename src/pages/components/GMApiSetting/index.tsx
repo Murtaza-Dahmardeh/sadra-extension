@@ -35,7 +35,7 @@ const GMApiSetting: React.FC = () => {
                   {t("settings")}
                   <Link
                     target="_black"
-                    href="https://github.com/scriptscat/scriptcat/blob/main/example/cat_file_storage.js"
+                    href="https://github.com/scriptscat/sadra/blob/main/example/cat_file_storage.js"
                   >
                     CAT_fileStorage
                   </Link>
@@ -89,7 +89,7 @@ const GMApiSetting: React.FC = () => {
                   onClick={async () => {
                     try {
                       let fs = await FileSystemFactory.create(fileSystemType, fileSystemParams);
-                      fs = await fs.openDir("ScriptCat/app");
+                      fs = await fs.openDir("Sadra/app");
                       window.open(await fs.getDirUrl(), "_black");
                     } catch (e) {
                       Message.error(`${t("account_validation_failed")}: ${e}`);

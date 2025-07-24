@@ -392,7 +392,7 @@
   "blacklist_pages": "ブラックリストページ",
   "blacklist_placeholder": "以下のページでScriptCatのスクリプト実行を禁止します。複数のページは改行文字で区切ってください。例：\nhttps://*.example.com",
   "expression_format_error": "式フォーマットエラー",
-  "migration_confirm_message": "ストレージエンジンの移行を再試行すると既存のデータが変更されます。確認してください。詳細はこちら：https://docs.scriptcat.org/docs/change/v0.17/",
+  "migration_confirm_message": "ストレージエンジンの移行を再試行すると既存のデータが変更されます。確認してください。詳細はこちら",
   "retry_migration": "ストレージエンジンの移行を再試行",
   "script_modified_leave_confirm": "スクリプトが変更されています。離れると変更が失われます。続行しますか？",
   "create_success_note": "作成に成功しました。バックグラウンドスクリプトはデフォルトで有効になりませんのでご注意ください",

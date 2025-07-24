@@ -1,18 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "__MSG_scriptcat__",
-  "version": "1.0.0.1200",
-  "author": "CodFrm",
-  "description": "__MSG_scriptcat_description__",
+  "name": "__MSG_sadra__",
+  "version": "5.0.0",
+  "author": "Sadra Technology Services",
+  "description": "__MSG_sadra_description__",
   "options_ui": {
     "page": "src/options.html",
     "open_in_tab": true
   },
   "background": {
-    "service_worker": "src/service_worker.js",
-    "scripts": [
-      "src/service_worker.js"
-    ]
+    "service_worker": "src/service_worker.js"
   },
   "incognito": "split",
   "action": {
@@ -41,9 +38,6 @@
     "clipboardWrite",
     "unlimitedStorage",
     "declarativeNetRequest"
-  ],
-  "optional_permissions": [
-    "userScripts"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -196,7 +196,7 @@ export class ResourceService {
           (u.hash.sha384 && u.hash.sha384 !== resource.hash.sha384) ||
           (u.hash.sha512 && u.hash.sha512 !== resource.hash.sha512)
         ) {
-          resource.content = `console.warn("ScriptCat: couldn't load resource from URL ${url} due to a SRI error ");`;
+          resource.content = `console.warn("Sadra Extension: couldn't load resource from URL ${url} due to a SRI error ");`;
         }
       }
       return resource;

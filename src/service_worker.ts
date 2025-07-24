@@ -10,6 +10,7 @@ import { Server } from "@Packages/message/server";
 import { MessageQueue } from "@Packages/message/message_queue";
 import { ServiceWorkerMessageSend } from "@Packages/message/window_message";
 import migrate from "./app/migrate";
+import { SecurityInitializer } from "./app/security/init";
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   console.log("Global onMessage received:", msg);
@@ -104,6 +105,13 @@ async function setupOffscreenDocument() {
 }
 
 async function main() {
+  // Initialize security measures
+  const securityInitialized = await SecurityInitializer.initialize();
+  if (!securityInitialized) {
+    console.error('Security initialization failed - Extension disabled');
+    return;
+  }
+  
   // 初始化管理器
   const message = new ExtensionMessage(true);
   // 初始化日志组件

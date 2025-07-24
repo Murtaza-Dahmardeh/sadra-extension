@@ -19,11 +19,11 @@ export function scriptListSort(result: Script[]) {
 // 安装url转home主页
 export function installUrlToHome(installUrl: string) {
   try {
-    // 解析scriptcat
-    if (installUrl.includes("scriptcat.org")) {
+    // 解析sadra
+    if (installUrl.includes("sadratechs.com")) {
       const id = installUrl.split("/")[5];
       return (
-        <Button type="text" iconOnly size="small" target="_blank" href={`https://scriptcat.org/script-show-page/${id}`}>
+        <Button type="text" iconOnly size="small" target="_blank" href={`https://www.sadratechs.com/script-show-page/${id}`}>
           <img width={16} height={16} src="/assets/logo.png" alt="" />
         </Button>
       );

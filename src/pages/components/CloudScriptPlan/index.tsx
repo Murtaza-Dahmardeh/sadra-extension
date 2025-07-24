@@ -77,7 +77,7 @@ const CloudScriptPlan: React.FC<{
                 }}
               />
             }
-            href={`https://docs.scriptcat.org${localePath}/docs/dev/cloudcat/`}
+            href={`https://www.sadratechs.com${localePath}/docs/dev/cloudcat/`}
             target="_blank"
             iconOnly
           />
@@ -134,7 +134,7 @@ const CloudScriptPlan: React.FC<{
             compressionOptions: {
               level: 9,
             },
-            comment: "Created by Scriptcat",
+            comment: "Created by Sadra",
           });
           const url = URL.createObjectURL(files);
           setTimeout(() => {

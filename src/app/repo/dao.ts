@@ -1,6 +1,6 @@
 import Dexie from "dexie";
 
-export const db = new Dexie("ScriptCat");
+export const db = new Dexie("Sadra");
 
 export const ErrSaveError = new Error("数据保存失败");
 

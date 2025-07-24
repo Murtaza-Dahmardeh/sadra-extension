@@ -393,7 +393,7 @@
   "blacklist_pages": "黑名單頁面",
   "blacklist_placeholder": "禁止腳本貓在以下頁面執行腳本，多個頁面用換行符號分隔，例如:\nhttps://*.example.com",
   "expression_format_error": "表達式格式錯誤",
-  "migration_confirm_message": "重試遷移儲存引擎會對現有資料造成修改，請確認，詳情請參閱：https://docs.scriptcat.org/docs/change/v0.17/",
+  "migration_confirm_message": "重試遷移儲存引擎會對現有資料造成修改，請確認，詳情請參閱：",
   "retry_migration": "重試遷移儲存引擎",
   "script_modified_leave_confirm": "腳本已修改，離開後會遺失修改，是否繼續？",
   "create_success_note": "新建成功，請注意背景腳本不會預設開啟",
