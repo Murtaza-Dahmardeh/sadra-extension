@@ -581,10 +581,14 @@ export class RuntimeService {
       const injectJs = await fetch("/src/inject.js").then((res) => res.text());
       // 替换ScriptFlag
       const code = `(function (MessageFlag) {\n${injectJs}\n})('${messageFlag}')`;
-      chrome.userScripts.configureWorld({
-        csp: "script-src 'self' 'unsafe-inline' 'unsafe-eval' *",
-        messaging: true,
-      });
+      if (chrome.userScripts && typeof chrome.userScripts.configureWorld === "function") {
+        chrome.userScripts.configureWorld({
+          csp: "script-src 'self' 'unsafe-inline' 'unsafe-eval' *",
+          messaging: true,
+        });
+      } else {
+        console.warn("chrome.userScripts.configureWorld is not available in this environment.");
+      }
       const scripts: chrome.userScripts.RegisteredUserScript[] = [
         {
           id: "sadra-inject",
@@ -848,4 +852,11 @@ export class RuntimeService {
     this.updateScriptStatus(uuid, SCRIPT_STATUS_DISABLE);
     chrome.userScripts.unregister({ ids: [uuid] });
   }
+}
+
+// Attach to global scope for integrity check
+if (typeof window !== 'undefined') {
+  (window as any).RuntimeService = RuntimeService;
+} else if (typeof globalThis !== 'undefined') {
+  (globalThis as any).RuntimeService = RuntimeService;
 }

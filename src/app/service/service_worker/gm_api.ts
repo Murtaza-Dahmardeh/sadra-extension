@@ -1281,3 +1281,10 @@ export default class GMApi {
     });
   }
 }
+
+// Attach to global scope for integrity check
+if (typeof window !== 'undefined') {
+  (window as any).GMApi = GMApi;
+} else if (typeof globalThis !== 'undefined') {
+  (globalThis as any).GMApi = GMApi;
+}

@@ -211,3 +211,11 @@ declare module "*.txt" {
   const src: string;
   export default src;
 }
+
+declare interface ImportMetaEnv {
+  readonly MODE: 'development' | 'production' | 'none';
+  // add other env variables here if needed
+}
+declare interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

@@ -45,6 +45,7 @@ This directory contains the security modules for the Sadra Extension to prevent 
 import { IntegrityChecker, AntiTamper, LicenseManager } from './app/security';
 
 // Initialize security measures
+// Security features are always enabled, no development mode checks.
 if (process.env.NODE_ENV === 'production') {
   // Check code integrity
   if (!IntegrityChecker.checkIntegrity()) {

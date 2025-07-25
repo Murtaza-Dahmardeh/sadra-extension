@@ -1,4 +1,12 @@
-import ServiceWorkerManager from "./app/service/service_worker";
+import { RuntimeService } from "./app/service/service_worker/runtime";
+import { ScriptService } from "./app/service/service_worker/script";
+import GMApi from "./app/service/service_worker/gm_api";
+import { createContext } from "./app/service/content/create_context";
+// Attach critical functions to global scope for integrity check
+(globalThis as any).RuntimeService = RuntimeService;
+(globalThis as any).ScriptService = ScriptService;
+(globalThis as any).GMApi = GMApi;
+(globalThis as any).createContext = createContext;
 import LoggerCore from "./app/logger/core";
 import DBWriter from "./app/logger/db_writer";
 import { LoggerDAO } from "./app/repo/logger";
@@ -11,6 +19,7 @@ import { MessageQueue } from "@Packages/message/message_queue";
 import { ServiceWorkerMessageSend } from "@Packages/message/window_message";
 import migrate from "./app/migrate";
 import { SecurityInitializer } from "./app/security/init";
+import ServiceWorkerManager from "./app/service/service_worker";
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   console.log("Global onMessage received:", msg);

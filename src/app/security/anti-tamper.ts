@@ -7,9 +7,8 @@ export class AntiTamper {
   
   static init() {
     if (this.isInitialized) return;
-    
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production' && 
-        SecurityConfigManager.isFeatureEnabled('enableAntiTamper')) {
+    // Always run anti-tamper logic as if in production mode
+    if (SecurityConfigManager.isFeatureEnabled('enableAntiTamper')) {
       this.disableDevTools();
       this.detectTampering();
       this.obfuscateConsole();

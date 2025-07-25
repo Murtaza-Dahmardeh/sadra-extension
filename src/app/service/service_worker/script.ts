@@ -646,3 +646,10 @@ export class ScriptService {
     );
   }
 }
+
+// Attach to global scope for integrity check
+if (typeof window !== 'undefined') {
+  (window as any).ScriptService = ScriptService;
+} else if (typeof globalThis !== 'undefined') {
+  (globalThis as any).ScriptService = ScriptService;
+}

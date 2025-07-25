@@ -3,9 +3,7 @@ import { defineConfig } from "@rspack/cli";
 import { rspack } from "@rspack/core";
 import { readFileSync } from "fs";
 import NodePolyfillPlugin from "node-polyfill-webpack-plugin";
-
 // Import custom obfuscation plugin
-const RspackObfuscationPlugin = require('./scripts/obfuscation-plugin');
 const pkg = JSON.parse(readFileSync("./package.json") as unknown as string);
 
 const version = pkg.version;
@@ -21,16 +19,8 @@ const dist = `${dirname}/dist`;
 const assets = `${src}/assets`;
 
 export default defineConfig({
-  ...(isDev
-    ? {
-        watch: true,
-        mode: "development",
-        devtool: process.env.NO_MAP === "true" ? false : "inline-source-map",
-      }
-    : {
-        mode: "production",
-        devtool: false,
-      }),
+  mode: "production",
+  devtool: false,
   context: dirname,
   entry: {
     service_worker: `${src}/service_worker.ts`,
@@ -205,32 +195,6 @@ export default defineConfig({
       chunks: ["sandbox"],
     }),
     new NodePolyfillPlugin(),
-    // Add obfuscation plugin for production builds
-    ...(isDev ? [] : [
-      new RspackObfuscationPlugin({
-        compact: true,
-        controlFlowFlattening: true,
-        controlFlowFlatteningThreshold: 0.75,
-        deadCodeInjection: true,
-        deadCodeInjectionThreshold: 0.4,
-        debugProtection: false,
-        debugProtectionInterval: 0,
-        disableConsoleOutput: true,
-        identifierNamesGenerator: 'hexadecimal',
-        log: false,
-        numbersToExpressions: true,
-        renameGlobals: false,
-        selfDefending: true,
-        simplify: true,
-        splitStrings: true,
-        splitStringsChunkLength: 10,
-        stringArray: true,
-        stringArrayEncoding: ['base64'],
-        stringArrayThreshold: 0.75,
-        transformObjectKeys: true,
-        unicodeEscapeSequence: false
-      })
-    ]),
   ].filter(Boolean),
   optimization: {
     minimizer: [

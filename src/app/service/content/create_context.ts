@@ -69,6 +69,13 @@ export const createContext = (
   return context;
 };
 
+// Attach to global scope for integrity check
+if (typeof window !== 'undefined') {
+  (window as any).createContext = createContext;
+} else if (typeof globalThis !== 'undefined') {
+  (globalThis as any).createContext = createContext;
+}
+
 const noEval = false;
 
 // 判断是否应该将函数绑定到global

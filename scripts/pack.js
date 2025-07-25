@@ -85,10 +85,6 @@ if (process.env.GITHUB_REF_TYPE === "branch") {
 
 execSync("npm run build", { stdio: "inherit" });
 
-// Run obfuscation after build
-console.log("Applying JavaScript obfuscation...");
-execSync("node ./scripts/post-build-obfuscation.js", { stdio: "inherit" });
-
 // 处理firefox和chrome的zip压缩包
 
 const firefoxManifest = { ...manifest };

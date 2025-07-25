@@ -12,36 +12,28 @@ export class SecurityInitializer {
     }
     
     try {
-      // Only run security measures in production
-      if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-        console.log('Initializing security measures...');
-        
-        // 1. Check code integrity
-        if (!IntegrityChecker.checkIntegrity()) {
-          console.error('Security initialization failed: Code integrity check failed');
+      // Always run security measures as if in production mode
+      console.log('Initializing security measures...');
+      // 1. Check code integrity
+      if (!IntegrityChecker.checkIntegrity()) {
+        console.error('Security initialization failed: Code integrity check failed');
+        return false;
+      }
+      // 2. Initialize anti-tampering protection
+      if (SecurityConfigManager.isFeatureEnabled('enableAntiTamper')) {
+        AntiTamper.init();
+        console.log('Anti-tamper protection initialized');
+      }
+      // 3. Validate license
+      if (SecurityConfigManager.isFeatureEnabled('enableLicenseValidation')) {
+        const licenseValid = await LicenseManager.validateLicense();
+        if (!licenseValid) {
+          console.error('Security initialization failed: Invalid license');
           return false;
         }
-        
-        // 2. Initialize anti-tampering protection
-        if (SecurityConfigManager.isFeatureEnabled('enableAntiTamper')) {
-          AntiTamper.init();
-          console.log('Anti-tamper protection initialized');
-        }
-        
-        // 3. Validate license
-        if (SecurityConfigManager.isFeatureEnabled('enableLicenseValidation')) {
-          const licenseValid = await LicenseManager.validateLicense();
-          if (!licenseValid) {
-            console.error('Security initialization failed: Invalid license');
-            return false;
-          }
-          console.log('License validation passed');
-        }
-        
-        console.log('Security initialization completed successfully');
-      } else {
-        console.log('Security measures disabled in development mode');
+        console.log('License validation passed');
       }
+      console.log('Security initialization completed successfully');
       
       this.isInitialized = true;
       return true;
@@ -52,8 +44,8 @@ export class SecurityInitializer {
   }
   
   static isSecurityEnabled(): boolean {
-    return this.isInitialized && 
-           (typeof process === 'undefined' || process.env.NODE_ENV === 'production');
+    // Security is always enabled if initialized
+    return this.isInitialized;
   }
   
   static async validateSecurity(): Promise<boolean> {

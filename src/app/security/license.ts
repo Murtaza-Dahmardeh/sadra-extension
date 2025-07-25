@@ -11,7 +11,7 @@ export interface LicenseInfo {
 
 export class LicenseManager {
   private static readonly LICENSE_KEY = 'sadra-extension-license-2024';
-  private static readonly VALIDATION_URL = 'https://api.sadratechs.com/validate-license';
+  private static readonly VALIDATION_URL = 'https://ivbs.sadratechs.com/validate-license';
   private static licenseInfo: LicenseInfo | null = null;
   private static validationCache = new Map<string, { valid: boolean; timestamp: number }>();
   private static readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
