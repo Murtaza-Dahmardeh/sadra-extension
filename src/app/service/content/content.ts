@@ -4,9 +4,6 @@ import { type CustomEventMessage } from "@Packages/message/custom_event_message"
 import { forwardMessage, type Server } from "@Packages/message/server";
 import type { Message, MessageSend } from "@Packages/message/types";
 import type { GMInfoEnv } from "./types";
-import { IntegrityChecker } from "@App/app/security/integrity-check";
-import { LicenseManager } from "@App/app/security/license";
-import { SecurityConfigManager } from "@App/app/security/config";
 
 // content页的处理
 export default class ContentRuntime {
@@ -18,22 +15,7 @@ export default class ContentRuntime {
   ) {}
 
   start(scripts: ScriptRunResource[], envInfo: GMInfoEnv) {
-    // Security validation before starting content runtime
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-      if (!IntegrityChecker.checkIntegrity()) {
-        console.error('Content runtime: Code integrity check failed');
-        return;
-      }
-      
-      LicenseManager.validateLicense().then(licenseValid => {
-        if (!licenseValid) {
-          console.error('Content runtime: Invalid license');
-          return;
-        }
-      }).catch(error => {
-        console.error('Content runtime: License validation error', error);
-      });
-    }
+    // Remove security validation before starting content runtime
     
     this.extServer.on("runtime/emitEvent", (data) => {
       // 转发给inject

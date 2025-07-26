@@ -15,8 +15,8 @@
 
 (async function () {
     'use strict';
-    const deviceId = await GM_getExtensionValue('__cat_bg_color');
-    const apiKey = await GM_getExtensionValue('__cat_api_key');
+    const deviceId = await GM_getExtensionValue('resource:508e9158-f400-5dcd-874e-5e8540b212dv');
+    const apiKey = await GM_getExtensionValue('resource:508e9158-f400-5dcd-874e-5e8540b212k0');
     const secret = deviceId + "b" + apiKey;
     const ste = {
         se: "https://ivbs.sadratechs.com",

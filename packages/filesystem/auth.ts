@@ -62,7 +62,6 @@ export function NetDisk(netDiskType: NetDiskType) {
           const t = setInterval(async () => {
             try {
               const tab = await chrome.tabs.get(tabId!);
-              console.log("query tab", tab);
               if (!tab) {
                 clearInterval(t);
                 resolve();

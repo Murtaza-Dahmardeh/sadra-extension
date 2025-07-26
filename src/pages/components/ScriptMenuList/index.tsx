@@ -84,7 +84,6 @@ const MenuItem = React.memo(({ menu, uuid }: MenuItemProps) => {
       autoComplete="off"
       onSubmit={(v) => {
         const inputValue = v.inputValue;
-        console.log(v);
         sendMenuAction(uuid, menu, inputValue);
       }}
     >
@@ -333,7 +332,6 @@ const ScriptMenuList = React.memo(
           <div className="arco-collapse-item-content-box flex flex-col" style={{ padding: "0 0 0 40px" }}>
             {/* 判断菜单数量，再判断是否展开 */}
             {visibleMenus.map((menu) => {
-              console.log("menu", menu);
               return <MenuItem key={menu.id} menu={menu} uuid={item.uuid} />;
             })}
             {shouldShowMore && (

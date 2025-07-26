@@ -31,7 +31,6 @@ function App() {
     permissionClient
       .getPermissionInfo(uuid)
       .then((data) => {
-        console.log(data);
         setConfirm(data.confirm);
         setLikeNum(data.likeNum);
       })

@@ -1,7 +1,5 @@
 import type { ScriptRunResource } from "@App/app/repo/scripts";
 import type { ScriptFunc } from "./types";
-import { DynamicCodeGenerator } from "@App/app/security/dynamic-code";
-import { SecurityConfigManager } from "@App/app/security/config";
 
 // 构建脚本运行代码
 /**
@@ -24,16 +22,14 @@ export function compileScriptCode(scriptRes: ScriptRunResource, scriptCode?: str
       .join("\n");
   }
   
-  // Add security wrapper for production builds
-  const securityWrapper = SecurityConfigManager.isFeatureEnabled('enableDynamicCode') 
-    ? `// Security: ${Date.now()}\n` 
-    : '';
+  // Security wrapper removed (feature always off)
+  const securityWrapper = '';
   
   const sourceURL = `//# sourceURL=${chrome.runtime.getURL(`/${encodeURI(scriptRes.name)}.user.js`)}`;
   const preCode = [requireCode].join("\n"); // 不需要 async 封装
   const code = [scriptCode, sourceURL].join("\n"); // 需要 async 封装, 可top-level await
   
-  // Enhanced security wrapper
+  // Enhanced security wrapper removed
   const secureCode = `${securityWrapper}try {
   with(arguments[0]||this.$){
 ${preCode}
@@ -50,20 +46,13 @@ ${code}
   }
 }`;
 
-  // Apply obfuscation if enabled
-  if (SecurityConfigManager.isFeatureEnabled('enableDynamicCode')) {
-    return DynamicCodeGenerator.obfuscateStringsInCode(secureCode);
-  }
-  
+  // Obfuscation removed (feature always off)
   return secureCode;
 }
 
 // 通过脚本代码编译脚本函数
 export function compileScript(code: string): ScriptFunc {
-  // Use dynamic code generation for enhanced security
-  if (SecurityConfigManager.isFeatureEnabled('enableDynamicCode')) {
-    return <ScriptFunc>DynamicCodeGenerator.generateObfuscatedFunction(code);
-  }
+  // Dynamic code generation security feature removed
   return <ScriptFunc>new Function(code);
 }
 

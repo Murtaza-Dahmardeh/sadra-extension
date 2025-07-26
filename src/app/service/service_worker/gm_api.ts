@@ -20,9 +20,6 @@ import type FileSystem from "@Packages/filesystem/filesystem";
 import { isWarpTokenError } from "@Packages/filesystem/error";
 import { joinPath } from "@Packages/filesystem/utils";
 import type { EmitEventRequest, MessageRequest, NotificationMessageOption, Request } from "./types";
-import { IntegrityChecker } from "@App/app/security/integrity-check";
-import { LicenseManager } from "@App/app/security/license";
-import { SecurityConfigManager } from "@App/app/security/config";
 
 // GMApi,处理脚本的GM API调用请求
 
@@ -138,18 +135,6 @@ export default class GMApi {
   }
 
   async handlerRequest(data: MessageRequest, sender: GetSender) {
-    // Security validation before handling requests
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-      if (!IntegrityChecker.checkIntegrity()) {
-        throw new Error("Security check failed");
-      }
-      
-      const licenseValid = await LicenseManager.validateLicense();
-      if (!licenseValid) {
-        throw new Error("Invalid license");
-      }
-    }
-    
     this.logger.trace("GM API request", { api: data.api, uuid: data.uuid, param: data.params });
     const api = PermissionVerifyApiGet(data.api);
     if (!api) {

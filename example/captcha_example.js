@@ -21,10 +21,8 @@ async function saveCaptchaWithImage(key, value, imageBase64) {
   });
 
   if (result.success) {
-    console.log('Captcha saved successfully');
     return result;
   } else {
-    console.error('Failed to save captcha:', result.error);
     return null;
   }
 }
@@ -50,10 +48,8 @@ async function markCaptchaAsUsed(key) {
     });
 
     if (result.success) {
-      console.log('Captcha marked as used');
       return result;
     } else {
-      console.error('Failed to mark captcha as used:', result.error);
       return null;
     }
   }
@@ -80,10 +76,8 @@ async function markCaptchaAsCorrect(key) {
     });
 
     if (result.success) {
-      console.log('Captcha marked as correct');
       return result;
     } else {
-      console.error('Failed to mark captcha as correct:', result.error);
       return null;
     }
   }

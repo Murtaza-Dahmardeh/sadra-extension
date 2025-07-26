@@ -17,9 +17,6 @@ import { compileScriptCode } from "../content/utils";
 import { type SystemConfig } from "@App/pkg/config/config";
 import { localePath } from "@App/locales/locales";
 import { arrayMove } from "@dnd-kit/sortable";
-import { IntegrityChecker } from "@App/app/security/integrity-check";
-import { LicenseManager } from "@App/app/security/license";
-import { SecurityConfigManager } from "@App/app/security/config";
 
 export class ScriptService {
   logger: Logger;
@@ -304,18 +301,6 @@ export class ScriptService {
   }
 
   async buildScriptRunResource(script: Script): Promise<ScriptRunResource> {
-    // Security validation before building script resource
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-      if (!IntegrityChecker.checkIntegrity()) {
-        throw new Error('Code integrity check failed');
-      }
-      
-      const licenseValid = await LicenseManager.validateLicense();
-      if (!licenseValid) {
-        throw new Error('Invalid license');
-      }
-    }
-    
     const ret: ScriptRunResource = <ScriptRunResource>Object.assign(script);
 
     // 自定义配置

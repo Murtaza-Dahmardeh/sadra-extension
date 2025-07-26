@@ -25,9 +25,6 @@ import Logger from "@App/app/logger/logger";
 import { getMetadataStr, getUserConfigStr } from "@App/pkg/utils/utils";
 import type { GMInfoEnv } from "../content/types";
 import { localePath } from "@App/locales/locales";
-import { IntegrityChecker } from "@App/app/security/integrity-check";
-import { LicenseManager } from "@App/app/security/license";
-import { SecurityConfigManager } from "@App/app/security/config";
 
 export class RuntimeService {
   scriptMatch: UrlMatch<string> = new UrlMatch<string>();
@@ -73,22 +70,6 @@ export class RuntimeService {
   }
 
   async init() {
-    // Security validation before initialization
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-      // Check integrity
-      if (!IntegrityChecker.checkIntegrity()) {
-        this.logger.error('Code integrity check failed - Runtime service disabled');
-        return;
-      }
-      
-      // Validate license
-      const licenseValid = await LicenseManager.validateLicense();
-      if (!licenseValid) {
-        this.logger.error('Invalid license - Runtime service disabled');
-        return;
-      }
-    }
-    
     // 启动gm api
     const permission = new PermissionVerify(this.group.group("permission"), this.mq);
     const gmApi = new GMApi(

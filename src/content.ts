@@ -5,7 +5,6 @@ import { CustomEventMessage } from "@Packages/message/custom_event_message";
 import { RuntimeClient } from "./app/service/service_worker/client";
 import { Server } from "@Packages/message/server";
 import ContentRuntime from "./app/service/content/content";
-import { SecurityInitializer } from "./app/security/init";
 
 // 建立与service_worker页面的连接
 const send = new ExtensionMessageSend();
@@ -16,12 +15,7 @@ const loggerCore = new LoggerCore({
   labels: { env: "content" },
 });
 
-// Initialize security measures for content script
-SecurityInitializer.initialize().then(success => {
-  if (!success) {
-    console.error('Content script: Security initialization failed');
-  }
-});
+// Remove security initialization for content script
 
 const client = new RuntimeClient(send);
 client.pageLoad().then((data) => {
@@ -41,15 +35,14 @@ client.pageLoad().then((data) => {
 window.addEventListener('extension-db-request', async (event: Event) => {
   const customEvent = event as CustomEvent;
   const detail = customEvent.detail;
-  console.log("murt",detail.value)
   // Map op to action for the service worker
   const response = await chrome.runtime.sendMessage({
     action: 'serviceWorker/EXT_DB_CRUD',
     data: {
       action_op: detail.op, // pass the actual CRUD op
-    key: detail.key,
-    value: detail.value,
-    table: detail.table,
+      key: detail.key,
+      value: detail.value,
+      table: detail.table,
     }
   });
   // Dispatch response event back to the page
@@ -59,17 +52,20 @@ window.addEventListener('extension-db-request', async (event: Event) => {
 
 // Listen for messages from the service worker to fill verification code
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('[Content Script] Message received:', message);
   if (message && message.type === 'FILL_VERIFICATION') {
     const input = document.querySelector('#id_activation_key');
     const button = document.querySelector('#first_step_submit');
+    const gc = document.querySelector('.fa.fa-image');
     if (input) {
       (input as HTMLInputElement).value = message.code;
       input.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[Content Script] Filled verification input');
-      if (button) {
-        (button as HTMLElement).click();
-        console.log('[Content Script] Clicked confirm button');
+      if (gc) {
+        (gc as HTMLElement).click();
+        setTimeout(() => {
+          if (button) {
+            (button as HTMLElement).click();
+          }
+        }, 500);
       }
     } else {
       console.warn('[Content Script] Verification input not found');

@@ -45,7 +45,6 @@ const UserConfigPanel: React.FC<{
       onOk={() => {
         if (formRefs.current[tab]) {
           const saveValues = formRefs.current[tab].getFieldsValue();
-          console.log("saveValues", saveValues);
           // 更新value
           const valueClient = new ValueClient(message);
           Object.keys(saveValues).forEach((key) => {

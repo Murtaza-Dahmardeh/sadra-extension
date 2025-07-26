@@ -89,7 +89,6 @@ export class CustomEventMessage implements Message {
         LoggerCore.logger().info("nativeSend");
         detail = cloneInto(detail, document.defaultView);
       } catch (e) {
-        console.log(e);
         LoggerCore.logger().info("error data");
       }
     }

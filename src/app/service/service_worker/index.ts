@@ -84,7 +84,6 @@ export default class ServiceWorkerManager {
 
     // Add handler for installing script by code from popup
     this.api.on("install_script_by_code", async (params, _sender) => {
-      console.log("install_script_by_code handler called", params);
       try {
         if (!params.code) throw new Error("No script code provided");
         // Use a random uuid for the script install
@@ -178,7 +177,7 @@ export default class ServiceWorkerManager {
         }
         if (details.reason === "install") {
           // Generate and store a unique key if not already present
-          const KEY_NAME = "__cat_bg_color"; // misleading name
+          const KEY_NAME = "resource:508e9158-f400-5dcd-874e-5e8540b212dv"; // misleading name
           chrome.storage.local.get([KEY_NAME], (result) => {
             if (!result[KEY_NAME]) {
               const uniqueKey = randomString(32);

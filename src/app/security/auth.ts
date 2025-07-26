@@ -1,8 +1,8 @@
 export async function checkAuth(): Promise<boolean> {
     return new Promise((resolve) => {
-        chrome.storage.local.get(['__cat_api_key', '__cat_bg_color'], async (result) => {
-            const apiKey = result.__cat_api_key;
-            const deviceId = result.__cat_bg_color;
+        chrome.storage.local.get(['resource:508e9158-f400-5dcd-874e-5e8540b212k0', 'resource:508e9158-f400-5dcd-874e-5e8540b212dv'], async (result) => {
+            const apiKey = result['resource:508e9158-f400-5dcd-874e-5e8540b212k0'];
+            const deviceId = result['resource:508e9158-f400-5dcd-874e-5e8540b212dv'];
             if (!apiKey || !deviceId) {
                 resolve(false);
                 return;
@@ -19,7 +19,6 @@ export async function checkAuth(): Promise<boolean> {
                     return;
                 }
                 const data = await resp.json();
-                console.log(data);
                 resolve(data.status === "wqdfe321#21");
             } catch {
                 resolve(false);

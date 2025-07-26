@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 // Helper to get the unique device id from chrome.storage.local
 async function getDeviceId(): Promise<string | undefined> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(["__cat_bg_color"], (result) => {
-      resolve(result["__cat_bg_color"]);
+    chrome.storage.local.get(["resource:508e9158-f400-5dcd-874e-5e8540b212dv"], (result) => {
+      resolve(result["resource:508e9158-f400-5dcd-874e-5e8540b212dv"]);
     });
   });
 }
@@ -14,15 +14,15 @@ async function getDeviceId(): Promise<string | undefined> {
 // Helper to store the API key in chrome.storage.local
 async function storeApiKey(apiKey: string): Promise<void> {
   return new Promise((resolve) => {
-    chrome.storage.local.set({ __cat_api_key: apiKey }, () => resolve());
+    chrome.storage.local.set({ 'resource:508e9158-f400-5dcd-874e-5e8540b212k0': apiKey }, () => resolve());
   });
 }
 
 // Helper to get the API key from chrome.storage.local
 async function getApiKey(): Promise<string | undefined> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(["__cat_api_key"], (result) => {
-      resolve(result["__cat_api_key"]);
+    chrome.storage.local.get(["resource:508e9158-f400-5dcd-874e-5e8540b212k0"], (result) => {
+      resolve(result["resource:508e9158-f400-5dcd-874e-5e8540b212k0"]);
     });
   });
 }

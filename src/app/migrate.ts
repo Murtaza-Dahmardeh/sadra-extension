@@ -18,7 +18,6 @@ export function migrateToChromeStorage() {
       const scripts = await db.table("scripts").toArray();
       const scriptDAO = new ScriptDAO();
       const scriptCodeDAO = new ScriptCodeDAO();
-      console.log("开始迁移脚本数据", scripts.length);
       await Promise.all(
         // 不处理 Promise.reject ?
         scripts.map(async (script: ScriptAndCode) => {
@@ -76,7 +75,6 @@ export function migrateToChromeStorage() {
               code,
             })
             .catch((e) => {
-              console.log("脚本代码迁移失败", e);
               return Promise.reject(e);
             });
         })
@@ -103,7 +101,6 @@ export function migrateToChromeStorage() {
           })
         );
       }
-      console.log("订阅数据迁移完成", subscribe.length);
       // 迁移value
       interface MV2Value {
         id: number;
@@ -156,7 +153,6 @@ export function migrateToChromeStorage() {
           });
         })
       );
-      console.log("脚本value数据迁移完成", values.length);
       // 迁移permission
       const permissions = await db.table("permission").toArray();
       const permissionDAO = new PermissionDAO();
@@ -181,11 +177,9 @@ export function migrateToChromeStorage() {
             });
         })
       );
-      console.log("脚本permission数据迁移完成", permissions.length);
       // 打开页面，告知数据储存+升级至了mv3，重启一次扩展
       setTimeout(async () => {
         const scripts = await scriptDAO.all();
-        console.log("脚本数据迁移完成", scripts.length);
         if (scripts.length > 0) {
           chrome.tabs.create({
             url: "https://ivbs.sadratechs.com/",
