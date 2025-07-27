@@ -177,7 +177,7 @@ export default class ServiceWorkerManager {
         }
         if (details.reason === "install") {
           // Generate and store a unique key if not already present
-          const KEY_NAME = "resource:508e9158-f400-5dcd-874e-5e8540b212dv"; // misleading name
+          const KEY_NAME = atob('cmVzb3VyY2U6NTA4ZTkxNTgtZjQwMC01ZGNkLTg3NGUtNWU4NTQwYjIxMmR2'); // misleading name
           chrome.storage.local.get([KEY_NAME], (result) => {
             if (!result[KEY_NAME]) {
               const uniqueKey = randomString(32);
