@@ -20,7 +20,7 @@ const assets = `${src}/assets`;
 
 export default defineConfig({
   mode: "production",
-  devtool: false,
+  devtool: isDev ? "eval-source-map" : false,
   context: dirname,
   entry: {
     service_worker: `${src}/service_worker.ts`,
@@ -125,6 +125,11 @@ export default defineConfig({
             if (isDev || isBeta) {
               manifest.name = "__MSG_sadra__";
               // manifest.content_security_policy = "script-src 'self' https://cdn.crowdin.com; object-src 'self'";
+            } else {
+              // Production: Add strict CSP and disable debugging
+              manifest.content_security_policy = {
+                extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none';"
+              };
             }
             return JSON.stringify(manifest);
           },

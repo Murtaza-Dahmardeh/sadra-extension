@@ -5,6 +5,7 @@ import { CustomEventMessage } from "@Packages/message/custom_event_message";
 import { RuntimeClient } from "./app/service/service_worker/client";
 import { Server } from "@Packages/message/server";
 import ContentRuntime from "./app/service/content/content";
+import contentProtection from "./app/security/content-protection";
 
 // 建立与service_worker页面的连接
 const send = new ExtensionMessageSend();

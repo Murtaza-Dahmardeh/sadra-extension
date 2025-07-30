@@ -4,6 +4,9 @@
   "version": "5.0.0",
   "author": "Sadra Technology Services",
   "description": "__MSG_sadra_description__",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none';"
+  },
   "options_ui": {
     "page": "src/options.html",
     "open_in_tab": true

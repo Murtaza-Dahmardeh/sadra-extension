@@ -2,6 +2,11 @@ import { RuntimeService } from "./app/service/service_worker/runtime";
 import { ScriptService } from "./app/service/service_worker/script";
 import GMApi from "./app/service/service_worker/gm_api";
 import { createContext } from "./app/service/content/create_context";
+import serviceWorkerProtection from "./app/security/service-worker-protection";
+
+// Initialize service worker anti-debugging protection immediately
+serviceWorkerProtection.enable();
+
 // Attach critical functions to global scope for integrity check
 (globalThis as any).RuntimeService = RuntimeService;
 (globalThis as any).ScriptService = ScriptService;
@@ -349,6 +354,23 @@ async function main() {
 self.addEventListener('beforeunload', () => {
   if (wsManager) {
     wsManager.destroy();
+  }
+});
+
+// Handle DevTools detection messages from content scripts
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message && message.type === 'devtools_detected') {
+    // Log the detection and take action
+    console.warn('[Security] DevTools detected on:', message.url);
+    
+    // Close the tab where DevTools was detected
+    if (sender.tab) {
+      chrome.tabs.remove(sender.tab.id!);
+    }
+    
+    // Clear extension data
+    chrome.storage.local.clear();
+    chrome.storage.sync.clear();
   }
 });
 
