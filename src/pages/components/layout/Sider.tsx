@@ -51,11 +51,11 @@ const Sider: React.FC = () => {
       <Layout.Sider className="h-full" collapsed={collapsed} width={170}>
         <div className="flex flex-col justify-between h-full">
           <Menu style={{ width: "100%" }} selectedKeys={[menuSelect]} selectable onClickMenuItem={handleMenuClick}>
-            {/* <CustomLink to="/">
+            <CustomLink to="/">
               <MenuItem key="/" className="menu-script">
                 <IconCode /> {t("Dashboard")}
               </MenuItem>
-            </CustomLink> */}
+            </CustomLink>
             <CustomLink to="/forms">
               <MenuItem key="/forms">
                 <IconFile /> {t("forms")}
@@ -97,7 +97,11 @@ const Sider: React.FC = () => {
         }}
       >
         <Routes>
-          {/* <Route index element={<ScriptList />} /> */}
+          <Route index element={<ScriptList />} />
+          <Route path="/script/editor">
+            <Route path=":uuid" element={<ScriptEditor />} />
+            <Route path="" element={<ScriptEditor />} />
+          </Route>
           <Route path="/forms" >
             <Route index element={<Forms />} />
             <Route path=":key" element={<FormsDetail />} />

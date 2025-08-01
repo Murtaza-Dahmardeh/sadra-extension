@@ -21,6 +21,9 @@ import {
   IconLink,
   IconMoonFill,
   IconSunFill,
+  IconWifi,
+  IconClose,
+  IconLoading,
 } from "@arco-design/web-react/icon";
 import type { ReactNode } from "react";
 import React, { useEffect, useRef, useState } from "react";
@@ -65,6 +68,11 @@ const MainLayout: React.FC<{
 }> = ({ children, className, pageName }) => {
   // All hooks at the top
   const [authValid, setAuthValid] = useState<boolean | null>(null);
+  const [wsStatus, setWsStatus] = useState<{
+    connected: boolean;
+    blocked: boolean;
+    connecting: boolean;
+  }>({ connected: false, blocked: false, connecting: false });
   const lightMode = useAppSelector(selectThemeMode);
   const dispatch = useAppDispatch();
   const importRef = useRef<RefTextAreaType>(null);
@@ -72,10 +80,50 @@ const MainLayout: React.FC<{
   const [showLanguage, setShowLanguage] = useState(false);
   const { t } = useTranslation();
 
+  // Check WebSocket status
+  const checkWsStatus = async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'websocket/status' });
+      setWsStatus(response);
+    } catch (error) {
+      console.error('Failed to check WebSocket status:', error);
+      setWsStatus({ connected: false, blocked: false, connecting: false });
+    }
+  };
+
+  // Connect WebSocket
+  const connectWebSocket = async () => {
+    try {
+      setWsStatus(prev => ({ ...prev, connecting: true }));
+      const response = await chrome.runtime.sendMessage({ action: 'websocket/connect' });
+      if (response.success) {
+        Message.success(t("websocket_connected") || "WebSocket connected successfully");
+      } else {
+        Message.error(t("websocket_connect_failed") || "Failed to connect WebSocket");
+      }
+      // Refresh status after connection attempt
+      setTimeout(checkWsStatus, 1000);
+    } catch (error) {
+      console.error('Failed to connect WebSocket:', error);
+      Message.error(t("websocket_connect_failed") || "Failed to connect WebSocket");
+      setWsStatus(prev => ({ ...prev, connecting: false }));
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     checkAuth().then((result) => { if (isMounted) setAuthValid(result); });
-    return () => { isMounted = false; };
+    
+    // Check WebSocket status on mount and every 30 seconds
+    checkWsStatus();
+    const wsStatusInterval = setInterval(() => {
+      if (isMounted) checkWsStatus();
+    }, 30000);
+    
+    return () => { 
+      isMounted = false; 
+      clearInterval(wsStatusInterval);
+    };
   }, []);
 
   return (
@@ -124,6 +172,34 @@ const MainLayout: React.FC<{
                 </Typography.Title>
               </div>
               <Space size="small" className="action-tools">
+                
+                {/* WebSocket Connection Status Button */}
+                <Button
+                  type="text"
+                  size="small"
+                  icon={
+                    wsStatus.connecting ? (
+                      <IconLoading className="animate-spin" />
+                    ) : wsStatus.connected ? (
+                      <IconWifi style={{ color: '#52c41a' }} />
+                    ) : (
+                      <IconClose style={{ color: '#ff4d4f' }} />
+                    )
+                  }
+                  onClick={wsStatus.connected ? undefined : connectWebSocket}
+                  disabled={wsStatus.connecting}
+                  style={{
+                    color: "var(--color-text-1)",
+                  }}
+                  className="!text-lg"
+                  title={
+                    wsStatus.connecting 
+                      ? (t("websocket_connecting") || "Connecting...")
+                      : wsStatus.connected 
+                        ? (t("websocket_connected") || "WebSocket Connected")
+                        : (t("websocket_disconnected") || "WebSocket Disconnected - Click to connect")
+                  }
+                />
                 
                 <Dropdown
                   droplist={

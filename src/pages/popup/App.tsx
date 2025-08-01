@@ -41,8 +41,33 @@ function App() {
   const [currentUrl, setCurrentUrl] = useState("");
   const [isEnableScript, setIsEnableScript] = useState(true);
   const [isBlacklist, setIsBlacklist] = useState(false);
+  const [cookieValue, setCookieValue] = useState("");
   const { t } = useTranslation();
   const [authValid, setAuthValid] = useState<boolean | null>(null);
+
+  // Load cookie value from storage on component mount
+  useEffect(() => {
+    chrome.storage.local.get(['cookie'], (result) => {
+      if (result.cookie) {
+        setCookieValue(result.cookie);
+      }
+    });
+  }, []);
+
+  // Store cookie value
+  const handleStoreCookie = () => {
+    chrome.storage.local.set({ cookie: cookieValue }, () => {
+      Message.success("Cookie stored successfully");
+    });
+  };
+
+  // Remove cookie value
+  const handleRemoveCookie = () => {
+    chrome.storage.local.remove(['cookie'], () => {
+      setCookieValue("");
+      Message.success("Cookie removed successfully");
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -315,6 +340,36 @@ function App() {
                   {t("popup.new_version_available")}
                 </span>
               )}
+            </div>
+          </Card>
+
+          {/* Cookie Management Section */}
+          <Card size="small" title="Cookie Management" style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Input
+                placeholder="Enter cookie value"
+                value={cookieValue}
+                onChange={(value) => setCookieValue(value)}
+                style={{ width: '100%' }}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button 
+                  type="primary" 
+                  size="small" 
+                  onClick={handleStoreCookie}
+                  disabled={!cookieValue.trim()}
+                >
+                  Store Cookie
+                </Button>
+                <Button 
+                  type="outline" 
+                  size="small" 
+                  onClick={handleRemoveCookie}
+                  disabled={!cookieValue.trim()}
+                >
+                  Remove Cookie
+                </Button>
+              </div>
             </div>
           </Card>
         </>

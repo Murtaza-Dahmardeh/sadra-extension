@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Card, Grid, Space, Typography, Tag, Badge } from "@arco-design/web-react";
-import { IconFile, IconUser } from "@arco-design/web-react/icon";
+import { Card, Grid, Space, Typography, Tag, Badge, Button, Popconfirm, Message } from "@arco-design/web-react";
+import { IconFile, IconUser, IconDelete } from "@arco-design/web-react/icon";
 import { FormsItem } from "@App/app/repo/forms";
 import { formatUnixTime } from "@App/pkg/utils/day_format";
 import { useTranslation } from "react-i18next";
@@ -26,6 +26,23 @@ const Forms: React.FC = () => {
 
   const openDetails = (item: FormsItem) => {
     navigate(`/forms/${encodeURIComponent(item.key)}`);
+  };
+
+  const handleDelete = async (item: FormsItem, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    try {
+      const { FormsDAO } = require("@App/app/repo/forms");
+      const formsDAO = new FormsDAO();
+      await formsDAO.delete({ key: item.key });
+      
+      // Remove the item from the local state
+      setForms(prevForms => prevForms.filter(form => form.key !== item.key));
+      
+      Message.success(t("delete_success") || "Form deleted successfully");
+    } catch (error) {
+      console.error("Error deleting form:", error);
+      Message.error(t("delete_error") || "Failed to delete form");
+    }
   };
 
   return (
@@ -56,11 +73,26 @@ const Forms: React.FC = () => {
                 title={item.name + " " + item.lastname}
                 description={item.mobile}
               />
-              <Space direction="horizontal" size="small" style={{ width: "100%" }}>
-              <Badge text={item.isAuto ? t("Auto") : t("Manual")} status='error'/>
-              {item.isKabul && <Badge text={t("Kabul")} status='success'/>}
-              {item.isJalal && <Badge text={t("Jalal")} status='processing'/>}
-              {item.order > 0 ? <Badge text={item.order.toString()} status='success'/> : null}
+              <Space direction="horizontal" size="small" style={{ width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+                <Space direction="horizontal" size="small">
+                  <Badge text={item.isAuto ? t("Auto") : t("Manual")} status='error'/>
+                  {item.isKabul && <Badge text={t("Kabul")} status='success'/>}
+                  {item.isJalal && <Badge text={t("Jalal")} status='processing'/>}
+                  {item.order > 0 ? <Badge text={item.order.toString()} status='success'/> : null}
+                </Space>
+                <Popconfirm
+                  title={t("confirm_delete_form") || "Are you sure you want to delete this form?"}
+                  icon={<IconDelete />}
+                  onOk={(e) => handleDelete(item, e)}
+                >
+                  <Button 
+                    type="text" 
+                    iconOnly 
+                    icon={<IconDelete />} 
+                    status="danger"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Popconfirm>
               </Space>
             </Card>
           </Col>

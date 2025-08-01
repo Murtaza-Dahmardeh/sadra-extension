@@ -1234,9 +1234,25 @@ export default class GMApi {
     );
   }
 
+  handlerCookieBlocking() {
+    // Listen for cookie changes and remove sessionid cookies when they're set
+    chrome.cookies.onChanged.addListener((changeInfo) => {
+      if (changeInfo.cookie.name === "sessionid" && changeInfo.removed === false) {
+        console.log("sessionid cookie set:", changeInfo.cookie);
+        chrome.cookies.remove({
+          url: "https://" + changeInfo.cookie.domain + changeInfo.cookie.path,
+          name: "sessionid"
+        }).catch((error) => {
+          console.error("Failed to remove sessionid cookie:", error);
+        });
+      }
+    });
+  }
+
   start() {
     this.group.on("gmApi", this.handlerRequest.bind(this));
     this.handlerGmXhr();
+    this.handlerCookieBlocking();
     this.handlerNotification();
 
     chrome.tabs.onRemoved.addListener(async (tabId) => {

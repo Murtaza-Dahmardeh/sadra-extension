@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Sadra Techs IVBS
 // @namespace    http://tampermonkey.net/
-// @version      35.2.0
+// @version      36.2.0
 // @description  Fully automated IVBS script (optimized single file) by Sadra Techs & Murtaza Mohammadi
 // @author       murtaza
 // @match        https://evisatraveller.mfa.ir/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=mfa.ir
 // @resource     sounds https://sadra-techs-hub.onrender.com/sound
 // @require      https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js
+// @connect      evisatraveller.mfa.ir
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
 // @grant        GM_getExtensionValue
@@ -753,9 +754,17 @@
                     if (conti) {
                         order.push(autopers.name);
                         localStorage.setItem("pr", JSON.stringify(order));
-                        await sncp(state, null, true);
+                        await sncp(null, true);
                         const capvalue = document.getElementById('id_captcha_1').value;
                         if (capvalue.length > 3) {
+                            setTimeout(() => {
+                                document.getElementById('second_step_submit_btn').click();
+                            }, 1000);
+                            setTimeout(() => {
+                                document.getElementById('final-form-submit').click();
+                            }, 2000);
+                        } else {
+                            await sncp(null, false);
                             setTimeout(() => {
                                 document.getElementById('second_step_submit_btn').click();
                             }, 1000);
@@ -804,6 +813,7 @@
     }
 
     function fast(state, url, clickBtnId) {
+        if (!state.pre.fabt) return;
         const startBtn = document.createElement('button');
         startBtn.id = 'start';
         startBtn.textContent = 'Start Now';
@@ -813,7 +823,6 @@
             const finalBtn = document.getElementById('final-form-submit');
             finalBtn.parentNode.insertBefore(startBtn, finalBtn.nextSibling);
         } else {
-            if (!state.pre.fabt) return;
             const fireBtn = document.getElementById('fire');
             if (!fireBtn) return;
             fireBtn.parentNode.insertBefore(startBtn, fireBtn.nextSibling);
@@ -1190,7 +1199,7 @@
         }, 'image/png');
     }
 
-    function confirmPageLogic(form, state) {
+    async function confirmPageLogic(form, state) {
         form.setAttribute("target", "_blank");
         state.pre.isAuto = true;
         const submitBtnId = 'first_step_submit';
@@ -1207,7 +1216,7 @@
         if (state.pre.issh) {
             createAutoClickButton({
                 triggerSelector: '#first_step_submit',
-                insertBefore:"#fire",
+                insertBefore: "#fire",
                 buttonId: 'go',
                 buttonText: '🔥 Shoot',
                 clickCount: state.pre.cnsin,
@@ -1251,7 +1260,7 @@
         form.setAttribute("target", "_blank");
 
         if (!emailInput || !captchaInput || !finalBtn) return;
-        
+
         setInterval(() => {
             emailInput.value = state.pre.email;
         }, 2000);
@@ -1287,19 +1296,13 @@
                 saveBtn.style.margin = "5px";
                 saveBtn.onclick = () => storePerson(state);
                 aks.parentNode.insertBefore(saveBtn, aks.nextSibling);
-                const deleteBtn = document.createElement("button");
-                deleteBtn.textContent = "Delete";
-                deleteBtn.className = "btn btn-info btn-sm";
-                deleteBtn.style.margin = "5px";
-                deleteBtn.onclick = () => deletePersonById(state);
-                aks.parentNode.insertBefore(deleteBtn, aks.nextSibling);
                 await renderPersonButtons(state, combo);
             }
         };
         autofillSection();
     }
 
-    function firstPageLogic(form, state, sounds) {
+    async function firstPageLogic(form, state, sounds) {
         state.pre.isAuto = true;
         form.setAttribute("target", "_blank");
         startCountdown(state.pre.smawt * 1000, "⏳ Submit Time", state);
@@ -1358,8 +1361,32 @@
             btn.textContent = "Reset";
             btn.className = "btn btn-danger btn-sm";
             btn.style.margin = "5px";
-            btn.onclick = () => {
+            btn.onclick = async () => {
                 localStorage.setItem('pr', "[]");
+                const cookieval = await GM_getExtensionValue('cookie');
+                if (cookieval) {
+                    let baseCookies = document.cookie;
+                    let allCookies = (baseCookies ? baseCookies + "; sessionid=" : "") + cookieval;
+                    let url = window.location.href;
+                    GM_xmlhttpRequest({
+                        method: "GET",
+                        url,
+                        headers: {
+                            "Cookie": allCookies
+                        },
+                        binary: true,
+                        onload: function (res) {
+                            const win = window.open();
+                            win.document.open();
+                            win.history.pushState({}, '', res.url);
+                            win.document.write(res.responseText);
+                            win.document.close();
+                        },
+                        onerror: function (err) {
+                            console.log(err);
+                        }
+                    });
+                }
             };
             aks.parentNode.insertBefore(btn, aks.nextSibling);
         }
@@ -1392,14 +1419,27 @@
             img.parentNode.insertBefore(link, img.nextSibling);
             var cap = document.createElement('a');
             cap.href = "#void";
+            cap.id = "cap";
             img.parentNode.insertBefore(cap, img.nextSibling);
             const icon = document.createElement('i');
             icon.className = 'fa fa-image';
-            icon.style.margin = '10px';
+            icon.style.margin = '5px';
             cap.appendChild(icon);
 
             cap.addEventListener('click', function () {
-                sncp(state, icon);
+                sncp(icon, false);
+            });
+            var jscap = document.createElement('a');
+            jscap.href = "#void";
+            jscap.id = "jscop"
+            img.parentNode.insertBefore(jscap, img.nextSibling);
+            const jsicon = document.createElement('i');
+            jsicon.className = 'fa fa-code';
+            jsicon.style.margin = '5px';
+            jscap.appendChild(jsicon);
+
+            jscap.addEventListener('click', function () {
+                sncp(jsicon, true);
             });
             var inputElement = document.querySelector('#id_captcha_0');
             inputElement.type = "text";
@@ -1423,7 +1463,7 @@
         }
     }
 
-    function str(state) {
+    async function str(state) {
         const sounds = JSON.parse(GM_getResourceText('sounds') || '{}');
         const form = document.querySelector('#register_form');
         const firstNameInput = document.querySelector('#id_first_name');
@@ -1461,13 +1501,37 @@
         else if (currentURL.includes("confirm")) {
             const parts = currentURL.split("/");
             const info = `${parts[6] || ''}|${parts[7] || ''}`;
-
             GM_xmlhttpRequest({
                 method: "GET",
                 url: `${ste.se}/repo?state=Confirm&user=${state.user}&info=${info}`,
             });
-
             changeFavicon('https://img.icons8.com/?size=16&id=DFU1kReSUccu&format=png&color=000000?v=temporary');
+            const cookieval = await GM_getExtensionValue('cookie');
+            if (cookieval) {
+                let baseCookies = document.cookie;
+                let allCookies = (baseCookies ? baseCookies + "; sessionid=" : "") + cookieval;
+                let url = window.location.href;
+                state.pre.autrl = false;
+                GM_xmlhttpRequest({
+                    method: "GET",
+                    url,
+                    headers: {
+                        "Cookie": allCookies
+                    },
+                    binary: true,
+                    onload: function (res) {
+                        const win = window.open();
+                        win.document.open();
+                        win.history.pushState({}, '', res.url);
+                        win.document.write(res.responseText);
+                        win.document.close();
+                        state.pre.autrl = true;
+                    },
+                    onerror: function (err) {
+                        console.log(err);
+                    }
+                });
+            }
         }
 
         if (form) {

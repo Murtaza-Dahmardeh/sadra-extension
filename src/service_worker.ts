@@ -372,6 +372,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.clear();
     chrome.storage.sync.clear();
   }
+  
+  // Handle WebSocket status requests
+  if (message && message.action === 'websocket/status') {
+    if (wsManager) {
+      sendResponse({
+        connected: wsManager.isConnected(),
+        blocked: wsManager['isBlocked'] || false,
+        connecting: wsManager['isConnecting'] || false
+      });
+    } else {
+      sendResponse({
+        connected: false,
+        blocked: false,
+        connecting: false
+      });
+    }
+    return true; // Keep the message channel open for async response
+  }
+  
+  // Handle WebSocket reconnection requests
+  if (message && message.action === 'websocket/connect') {
+    if (wsManager) {
+      wsManager.resetBlocked();
+      wsManager.connect().then(() => {
+        sendResponse({ success: true });
+      }).catch((error) => {
+        sendResponse({ success: false, error: error.message });
+      });
+    } else {
+      sendResponse({ success: false, error: 'WebSocket manager not initialized' });
+    }
+    return true; // Keep the message channel open for async response
+  }
 });
 
 main();

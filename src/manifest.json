@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_sadra__",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "author": "Sadra Technology Services",
   "description": "__MSG_sadra_description__",
   "content_security_policy": {

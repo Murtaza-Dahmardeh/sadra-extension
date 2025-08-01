@@ -43,10 +43,16 @@ const Captcha: React.FC = () => {
     // Remove captchas older than 1 hour (Dexie.js syntax)
     const oneHourAgo = Date.now() - 3600 * 1000;
     await captchaDAO.table.where('createtime').below(oneHourAgo).delete();
-    // Fetch remaining captchas
-    captchaDAO.find().toArray().then((data: CaptchaItem[]) => {
-      setCaptchas(data.sort((a, b) => (b.createtime || 0) - (a.createtime || 0)));
-    });
+    
+    // First, let's get all captchas to debug
+    const allCaptchas = await captchaDAO.find().toArray();
+    console.log('All captchas:', allCaptchas);
+    
+    // Filter unused captchas in JavaScript instead of database query
+    const unusedCaptchas = allCaptchas.filter((captcha: CaptchaItem) => captcha.isUsed === false);
+    console.log('Unused captchas:', unusedCaptchas);
+    
+    setCaptchas(unusedCaptchas.sort((a: CaptchaItem, b: CaptchaItem) => (b.createtime || 0) - (a.createtime || 0)));
   };
 
   const handleKeyChange = (editKey: string, newValue: string) => {
